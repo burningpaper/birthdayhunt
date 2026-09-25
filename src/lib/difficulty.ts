@@ -17,13 +17,18 @@ const PRESETS = {
   countingLock: { easy: { digits: 2 }, medium: { digits: 3 }, hard: { digits: 3 } },
 } as const;
 
+/**
+ * The spec's order is Jigsaw, Marble Run, Train Track, Memory Match, Flick
+ * Golf, Counting Lock. Until the two physics puzzles are built, new hunts
+ * use six stations of the four that are (see PUZZLE_META.ready).
+ */
 export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = [
   "jigsaw",
-  "marbleRun",
   "trainTrack",
   "memoryMatch",
-  "flickGolf",
   "countingLock",
+  "trainTrack",
+  "memoryMatch",
 ];
 
 function blankQuestion(): LockQuestion {

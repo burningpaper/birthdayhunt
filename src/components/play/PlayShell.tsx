@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { NoPinchZoom } from "./NoPinchZoom";
 import { RotateOverlay } from "./RotateOverlay";
 
 /**
@@ -10,6 +11,7 @@ export function PlayShell({ children }: { children: ReactNode }) {
     <main className="toybox play-surface fixed inset-0 overflow-hidden">
       {children}
       <RotateOverlay />
+      <NoPinchZoom />
     </main>
   );
 }

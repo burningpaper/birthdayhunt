@@ -75,7 +75,10 @@ export function StationCard({ station, total, difficulty, mediaMode, canRemove, 
             onChange={(e) => set({ puzzle: defaultPuzzle(e.target.value as PuzzleType, difficulty) })}
           >
             {PUZZLE_TYPES.map((type) => (
-              <option key={type} value={type}>{PUZZLE_META[type].name}</option>
+              <option key={type} value={type} disabled={!PUZZLE_META[type].ready && station.puzzle.type !== type}>
+                {PUZZLE_META[type].name}
+                {PUZZLE_META[type].ready ? "" : " (coming soon)"}
+              </option>
             ))}
           </Select>
         </Field>

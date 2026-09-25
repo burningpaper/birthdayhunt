@@ -1,3 +1,4 @@
+import { PUZZLE_META } from "./puzzleMeta";
 import type { Hunt, Station } from "./schema";
 
 /** The spoken-style label the parent sees for a station's clue (spec §7.2). */
@@ -12,6 +13,9 @@ function stationProblems(station: Station, total: number): string[] {
 
   if (!station.clue.photoUrl && !hasShownText) {
     problems.push(`${label}: add a clue photo or shown clue text (${clueTargetLabel(station, total).toLowerCase()})`);
+  }
+  if (!PUZZLE_META[station.puzzle.type].ready) {
+    problems.push(`${label}: ${PUZZLE_META[station.puzzle.type].name} isn't built yet. Pick another puzzle`);
   }
   if (station.puzzle.type === "jigsaw" && !station.clue.photoUrl) {
     problems.push(`${label}: the jigsaw needs a clue photo, because the photo is the puzzle`);
