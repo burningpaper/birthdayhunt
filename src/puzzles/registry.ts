@@ -3,6 +3,7 @@ import type { PuzzleType } from "@/lib/schema";
 import { Jigsaw } from "./jigsaw/Jigsaw";
 import { CountingLock } from "./lock/CountingLock";
 import { MemoryMatch } from "./memory/MemoryMatch";
+import { TrainTrack } from "./track/TrainTrack";
 import { Placeholder } from "./Placeholder";
 import type { PuzzleProps } from "./types";
 
@@ -10,7 +11,7 @@ import type { PuzzleProps } from "./types";
 export const PUZZLES: Record<PuzzleType, ComponentType<PuzzleProps>> = {
   jigsaw: Jigsaw,
   marbleRun: Placeholder,
-  trainTrack: Placeholder,
+  trainTrack: TrainTrack,
   memoryMatch: MemoryMatch,
   flickGolf: Placeholder,
   countingLock: CountingLock,

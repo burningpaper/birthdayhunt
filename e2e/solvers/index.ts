@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { findSolution, turnsFor, type Kind } from "../../src/puzzles/track/logic";
 
 /**
  * Solving each puzzle through the real UI, the way a child would, using the
@@ -82,14 +83,45 @@ export async function solveLock(page: Page, answers: number[]) {
   await page.getByRole("button", { name: "Open!" }).click();
 }
 
+/** Read the tile kinds off the board, find a route, and tap each tile round to fit it. */
+export async function solveTrack(page: Page) {
+  const board = page.locator("[data-start][data-end]");
+  const size = Number(await board.getAttribute("data-size"));
+  const startRow = Number(await board.getAttribute("data-start"));
+  const endRow = Number(await board.getAttribute("data-end"));
+  const kinds: Kind[][] = Array.from({ length: size }, () => Array<Kind>(size));
+  for (const tile of await page.locator(".track-tile").all()) {
+    kinds[Number(await tile.getAttribute("data-y"))][Number(await tile.getAttribute("data-x"))] = (await tile.getAttribute("data-kind")) as Kind;
+  }
+  const needs = findSolution(kinds, startRow, endRow);
+  expect(needs, "the board should be solvable").not.toBeNull();
+
+  for (const [key, need] of needs!) {
+    const [x, y] = key.split(",");
+    const tile = page.locator(`.track-tile[data-x="${x}"][data-y="${y}"]`);
+    const kind = kinds[Number(y)][Number(x)];
+    if (kind === "cross") continue;
+    const target = turnsFor(kind, need)!;
+    const matches = async () => {
+      const turns = Number(await tile.getAttribute("data-turns"));
+      return kind === "straight" ? turns % 2 === target % 2 : turns === target;
+    };
+    for (let guard = 0; guard < 4 && !(await matches()); guard++) await tile.click();
+  }
+}
+
 export async function solvePlaceholder(page: Page) {
   await page.getByRole("button", { name: "Tap to solve" }).click();
 }
 
 /** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */
 export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
+  // Puzzles fade in after "Tap to start": wait until one is actually on screen.
+  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, button:has-text('Tap to solve')");
+  await expect(anyPuzzle.first()).toBeVisible();
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
   if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
   if (await page.locator(".dial-window").first().isVisible()) return solveLock(page, lockAnswers);
+  if (await page.locator(".track-tile").first().isVisible()) return solveTrack(page);
   return solvePlaceholder(page);
 }

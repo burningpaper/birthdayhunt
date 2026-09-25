@@ -89,3 +89,13 @@ export function unlock() {
     { freq: 1400, at: 0.1, length: 0.12, type: "sine", volume: 0.12 },
   ]);
 }
+
+/** Toot toot: the train sets off (and arrives). */
+export function toot() {
+  play([
+    { freq: 587, at: 0, length: 0.18, type: "square", volume: 0.07 },
+    { freq: 740, at: 0, length: 0.18, type: "triangle", volume: 0.12 },
+    { freq: 587, at: 0.24, length: 0.3, type: "square", volume: 0.07 },
+    { freq: 740, at: 0.24, length: 0.3, type: "triangle", volume: 0.12 },
+  ]);
+}

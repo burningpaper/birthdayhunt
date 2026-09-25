@@ -302,3 +302,29 @@ body {
     0 0 0 5px var(--color-sunflower);
   animation: hint-glow 1.6s ease-in-out infinite;
 }
+
+/* ---------- Train Track ---------- */
+
+.track-tile {
+  --lip: 4px;
+}
+
+.track-art {
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Track joined up from the station glows a little green: you're on the right line. */
+.track-tile.is-lit {
+  --plastic: color-mix(in oklab, var(--color-cream), var(--color-grass) 32%);
+}
+
+.track-tile.is-locked {
+  box-shadow:
+    0 0 0 4px var(--color-grass),
+    0 0 16px 2px rgb(34 169 79 / 0.6),
+    0 var(--lip) 0 var(--plastic-lip);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-art { transition: none; }
+}

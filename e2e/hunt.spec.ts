@@ -29,10 +29,13 @@ async function solveStation(page: Page, hunt: Hunt, index: number) {
   await page.getByRole("button", { name: "Tap to start!" }).click();
   await page.waitForLoadState("networkidle");
   await solveAny(page);
-  await expect(page.getByText(/You did it!|You solved every puzzle!/)).toBeVisible();
+  // Allow for the celebration build-up (the train ride runs up to 4s).
+  await expect(page.getByText(/You did it!|You solved every puzzle!/)).toBeVisible({ timeout: 10_000 });
 }
 
 test("a parent builds a hunt and a child plays it end to end", async ({ page, browser }) => {
+  // Six real puzzles, played through the UI (the train ride alone takes a few seconds).
+  test.setTimeout(120_000);
   await signIn(page);
 
   // Create a hunt and give station 1 a real photo through the UI.

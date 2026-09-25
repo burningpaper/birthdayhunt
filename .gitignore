@@ -48,3 +48,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /.data-e2e/
+
+# scratch visual checks (local only)
+/e2e-scratch/
