@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { REDIS_URL_NAMES, redisCredentials } from "../env";
 import { createFileStore } from "./fileStore";
 import { createRedisStore } from "./redisStore";
 import type { Store } from "./types";
@@ -14,8 +15,8 @@ export function localDataDir(): string {
 }
 
 /**
- * Upstash when its credentials are present (the Vercel Marketplace sets the
- * KV_* names; a direct Upstash setup uses UPSTASH_*), otherwise a local file.
+ * Upstash when its credentials are present (see env.ts for the names tried),
+ * otherwise a local file.
  * Production refuses to fall back: a missing database there is a
  * misconfiguration, and silently writing to a throwaway disk would lose a
  * child's progress.
@@ -23,13 +24,14 @@ export function localDataDir(): string {
 export function getStore(): Store {
   if (store) return store;
 
-  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  const redis = redisCredentials(process.env);
 
-  if (url && token) {
-    store = createRedisStore(url, token);
+  if (redis) {
+    store = createRedisStore(redis.url, redis.token);
   } else if (process.env.VERCEL) {
-    throw new Error("Redis is not configured. Connect Upstash Redis to this Vercel project.");
+    throw new Error(
+      `Redis is not configured: none of ${REDIS_URL_NAMES.join(", ")} (with a matching token) is set. Connect Upstash Redis to this Vercel project.`,
+    );
   } else {
     store = createFileStore(localDataDir());
   }

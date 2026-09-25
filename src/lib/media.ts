@@ -31,7 +31,7 @@ const TYPE_BY_EXTENSION: Record<string, string> = {
 };
 
 export function mediaMode(): MediaMode {
-  return process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
+  return process.env.BLOB_READ_WRITE_TOKEN?.trim() ? "blob" : "local";
 }
 
 export function localUploadDir(): string {
