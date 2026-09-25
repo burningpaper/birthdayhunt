@@ -20,6 +20,6 @@ export async function POST(request: Request) {
 
   const name = `${randomBytes(8).toString("hex")}.${extension}`;
   await mkdir(localUploadDir(), { recursive: true });
-  await writeFile(path.join(localUploadDir(), name), bytes);
+  await writeFile(path.join(/*turbopackIgnore: true*/ localUploadDir(), name), bytes);
   return Response.json({ url: `/api/media/${name}` }, { status: 201 });
 }

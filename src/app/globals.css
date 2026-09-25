@@ -162,3 +162,42 @@ body {
   .rattle { animation: none; }
   .plastic { transition: none; }
 }
+
+/* ---------- Printable QR sheet (A4) ---------- */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-sheet[data-size="half"] .qr-card {
+    height: 138mm;
+    break-inside: avoid;
+  }
+
+  .print-sheet[data-size="half"] .qr-code {
+    max-width: 88mm;
+  }
+
+  .print-sheet[data-size="quarter"] .qr-card {
+    height: 138mm;
+    break-inside: avoid;
+    padding: 6mm;
+  }
+
+  .print-sheet[data-size="quarter"] .qr-code {
+    max-width: 62mm;
+  }
+
+  .print-sheet[data-size="quarter"] .qr-card .font-display {
+    font-size: 26pt;
+  }
+}

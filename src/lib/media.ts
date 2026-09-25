@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { localDataDir } from "./store";
 
 export type MediaMode = "blob" | "local";
 
@@ -34,7 +35,7 @@ export function mediaMode(): MediaMode {
 }
 
 export function localUploadDir(): string {
-  return path.join(process.cwd(), ".data", "uploads");
+  return path.join(/*turbopackIgnore: true*/ localDataDir(), "uploads");
 }
 
 /** Only our own generated names are servable: no paths, no surprises. */

@@ -8,6 +8,11 @@ export type { Store } from "./types";
 
 let store: Store | undefined;
 
+/** Where local-mode data lives. DATA_DIR lets the E2E tests use a throwaway copy. */
+export function localDataDir(): string {
+  return path.resolve(/*turbopackIgnore: true*/ process.cwd(), process.env.DATA_DIR ?? ".data");
+}
+
 /**
  * Upstash when its credentials are present (the Vercel Marketplace sets the
  * KV_* names; a direct Upstash setup uses UPSTASH_*), otherwise a local file.
@@ -26,7 +31,7 @@ export function getStore(): Store {
   } else if (process.env.VERCEL) {
     throw new Error("Redis is not configured. Connect Upstash Redis to this Vercel project.");
   } else {
-    store = createFileStore(path.join(process.cwd(), ".data"));
+    store = createFileStore(localDataDir());
   }
   return store;
 }

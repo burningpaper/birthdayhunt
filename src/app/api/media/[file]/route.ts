@@ -12,7 +12,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/media/[file]
 
   let bytes: Buffer;
   try {
-    bytes = await readFile(path.join(localUploadDir(), file));
+    bytes = await readFile(path.join(/*turbopackIgnore: true*/ localUploadDir(), file));
   } catch {
     return new Response("Not found", { status: 404 });
   }

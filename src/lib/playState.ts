@@ -1,4 +1,4 @@
-import type { Hunt, Progress, PuzzleConfig, PuzzleType, Station } from "./schema";
+import type { Difficulty, Hunt, Progress, PuzzleConfig, PuzzleType, Station } from "./schema";
 
 /**
  * Order enforcement (spec §5.2), as pure functions.
@@ -94,6 +94,7 @@ export type PlayResponse =
       childName?: string;
       station: StationView;
       puzzle: PuzzleConfig;
+      difficulty: Difficulty;
       /** Jigsaw only: the photo the pieces are cut from. */
       puzzlePhotoUrl?: string;
     }
@@ -128,6 +129,7 @@ export function toPlayResponse(hunt: Hunt | null, decision: PlayDecision): PlayR
         childName,
         station: stationView(hunt, station),
         puzzle: station.puzzle,
+        difficulty: hunt.difficulty,
         puzzlePhotoUrl: station.puzzle.type === "jigsaw" ? station.clue.photoUrl : undefined,
       };
     }

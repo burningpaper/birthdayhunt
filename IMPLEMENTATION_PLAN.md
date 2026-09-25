@@ -1,12 +1,12 @@
 # Implementation Plan — Treasure Hunt
 
 Birthday is under two weeks away. A playable hunt comes first; physics puzzles are stretch goals.
-Stack: Next.js 15 (App Router, TS strict) · Tailwind v4 · Upstash Redis · Vercel Blob · zod · nanoid · qrcode · canvas-confetti · Vitest · Playwright (WebKit, iPad landscape). Package manager: npm.
+Stack: Next.js 16 (App Router, TS strict) · Tailwind v4 · Upstash Redis · Vercel Blob · zod · nanoid · qrcode · canvas-confetti · Vitest · Playwright (WebKit, iPad landscape). Package manager: npm.
 
 ## Stage 1: Skeleton — playable end to end
 Goal: Project scaffold, PIN login (HMAC-signed cookie, rate-limited), hunt CRUD, station editor (photo upload + text), play route with order enforcement (`lib/playState.ts`), placeholder "Tap to solve" puzzle, clue reveal, finale, A4 QR print page. Deployed to Vercel.
 Success Criteria: A 6-station hunt printed and scanned with the iPad Camera app plays through end to end; out-of-order scans leak no future clue; reload keeps progress; `playState` unit-tested; happy-path E2E passes.
-Status: Not Started
+Status: Complete locally (43 unit + 3 WebKit E2E passing). Remaining: deploy to Vercel and scan a printed code on the real iPad.
 
 ## Stage 2: Audio
 Goal: "Tap to start" audio unlock, MediaRecorder voice clues (audio/mp4 on Safari), auto-play + replay on reveal, `speak()` with en-GB/en-ZA voices, SFX.
