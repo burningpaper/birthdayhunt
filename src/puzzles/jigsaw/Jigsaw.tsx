@@ -3,7 +3,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { snap as snapSound, tock } from "@/lib/audio/sfx";
+import { hashSeed } from "../random";
 import type { PuzzleProps } from "../types";
+import { useElementSize } from "../useElementSize";
 import {
   computeLayout,
   gridFor,
@@ -24,29 +26,6 @@ type Piece = { id: number; col: number; row: number; path: string } & Move;
 const TAP_SLOP = 8;
 const HINT_MS = 2500;
 const SOLVED_PAUSE_MS = 700;
-
-/** A stable number from a string, so the same photo always cuts the same way. */
-function hashSeed(text: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
-function useElementSize<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setSize({ width, height });
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, size };
-}
 
 /**
  * Picture Jigsaw (spec §6.1). The clue photo is cut into tabbed pieces and

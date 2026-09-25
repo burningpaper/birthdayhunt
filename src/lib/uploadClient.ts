@@ -13,9 +13,9 @@ const JPEG_QUALITY = 0.82;
  * matters on the day: every clue photo loads fast on the house Wi-Fi.
  * `createImageBitmap` honours EXIF orientation, so sideways photos stay upright.
  */
-export async function resizePhoto(file: File): Promise<Blob> {
+export async function resizePhoto(file: File, maxEdge: number = MAX_EDGE): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
   const height = Math.round(bitmap.height * scale);
 

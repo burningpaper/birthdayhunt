@@ -55,6 +55,19 @@ export async function solveJigsaw(page: Page) {
   await expect(loose).toHaveCount(0);
 }
 
+export async function solveMemory(page: Page) {
+  const cards = page.locator("button.memory-card");
+  await expect(cards.first()).toBeVisible();
+  const faces = await cards.evaluateAll((els) => els.map((el) => el.getAttribute("data-face")!));
+  const byFace = new Map<string, number[]>();
+  faces.forEach((face, i) => byFace.set(face, [...(byFace.get(face) ?? []), i]));
+  for (const [a, b] of byFace.values()) {
+    await cards.nth(a).click();
+    await cards.nth(b).click();
+    await expect(cards.nth(b)).toHaveAttribute("data-matched", "true");
+  }
+}
+
 export async function solvePlaceholder(page: Page) {
   await page.getByRole("button", { name: "Tap to solve" }).click();
 }
@@ -62,5 +75,6 @@ export async function solvePlaceholder(page: Page) {
 /** Solve whatever puzzle this station shows. */
 export async function solveAny(page: Page) {
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
+  if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
   return solvePlaceholder(page);
 }

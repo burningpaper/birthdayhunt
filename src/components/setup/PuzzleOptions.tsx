@@ -3,6 +3,7 @@
 import { withLockDigits } from "@/lib/difficulty";
 import type { LockQuestion, PuzzleConfig } from "@/lib/schema";
 import type { MediaMode } from "@/lib/uploadClient";
+import { CardPhotosField } from "./CardPhotosField";
 import { Field, Segmented, TextInput, Toggle } from "./ui";
 import { VoiceRecorder } from "./VoiceRecorder";
 
@@ -26,7 +27,12 @@ export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
     case "trainTrack":
       return <Segmented label="Grid size" options={([4, 5, 6] as const).map((v) => ({ value: v, label: `${v} × ${v}` }))} value={puzzle.gridSize} onChange={(gridSize) => onChange({ ...puzzle, gridSize })} />;
     case "memoryMatch":
-      return <Segmented label="Pairs" options={numbers([6, 8, 10, 12] as const, " pairs")} value={puzzle.pairs} onChange={(pairs) => onChange({ ...puzzle, pairs })} />;
+      return (
+        <div className="grid gap-5">
+          <Segmented label="Pairs" options={numbers([6, 8, 10, 12] as const, " pairs")} value={puzzle.pairs} onChange={(pairs) => onChange({ ...puzzle, pairs })} />
+          <CardPhotosField urls={puzzle.photoUrls ?? []} mediaMode={mediaMode} onChange={(photoUrls) => onChange({ ...puzzle, photoUrls: photoUrls.length ? photoUrls : undefined })} />
+        </div>
+      );
     case "flickGolf":
       return <Segmented label="Holes" options={numbers([1, 2, 3, 4, 5] as const).map((o) => ({ ...o, label: o.value === 1 ? "1 hole" : `${o.value} holes` }))} value={puzzle.holes} onChange={(holes) => onChange({ ...puzzle, holes })} />;
     case "countingLock":

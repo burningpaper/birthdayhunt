@@ -251,3 +251,29 @@ body {
   .jigsaw-turn { transition: none; }
   .jigsaw-hint { animation: none; }
 }
+
+/* ---------- Memory Match ---------- */
+
+.memory-card {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.memory-card:focus-visible {
+  outline: 4px solid var(--color-cream);
+  outline-offset: 4px;
+  border-radius: var(--radius-tile);
+}
+
+.memory-face {
+  position: absolute;
+  inset: 0;
+}
+
+/* A matched pair glows green, so the finished part of the board reads at a glance. */
+.memory-face.is-matched {
+  box-shadow:
+    0 0 0 4px var(--color-grass),
+    0 6px 0 var(--plastic-lip),
+    0 16px 22px -6px rgb(8 14 36 / 0.55);
+}
+
