@@ -277,3 +277,28 @@ body {
     0 16px 22px -6px rgb(8 14 36 / 0.55);
 }
 
+
+/* ---------- Counting Lock ---------- */
+
+/* A dial window: a cream slot set into the lock, lit from above. */
+.dial-window {
+  background: linear-gradient(180deg, #e9dfcc, var(--color-cream) 35%, var(--color-cream) 65%, #e9dfcc);
+  box-shadow:
+    inset 0 4px 8px rgb(20 33 63 / 0.35),
+    inset 0 -2px 0 rgb(255 255 255 / 0.6);
+  transition: box-shadow 200ms ease-out;
+}
+
+.dial-window.is-right {
+  box-shadow:
+    inset 0 4px 8px rgb(20 33 63 / 0.25),
+    0 0 0 5px var(--color-grass),
+    0 0 18px 4px rgb(34 169 79 / 0.55);
+}
+
+.dial-window.is-hinted {
+  box-shadow:
+    inset 0 4px 8px rgb(20 33 63 / 0.25),
+    0 0 0 5px var(--color-sunflower);
+  animation: hint-glow 1.6s ease-in-out infinite;
+}

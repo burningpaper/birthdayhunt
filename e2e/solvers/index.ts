@@ -68,13 +68,28 @@ export async function solveMemory(page: Page) {
   }
 }
 
+/** Turn each wheel to its digit with the arrow buttons, then press Open. */
+export async function solveLock(page: Page, answers: number[]) {
+  const windows = page.locator(".dial-window");
+  await expect(windows.first()).toBeVisible();
+  const wheelTargets = (await windows.count()) === 2 && answers.length === 1 ? [Math.floor(answers[0] / 10), answers[0] % 10] : answers;
+  for (const [wheel, target] of wheelTargets.entries()) {
+    const window = page.locator(`.dial-window[data-wheel="${wheel}"]`);
+    const up = page.locator("button[aria-label$=' up']").nth(wheel);
+    for (let guard = 0; guard < 10 && Number(await window.getAttribute("data-value")) !== target; guard++) await up.click();
+    await expect(window).toHaveAttribute("data-value", String(target));
+  }
+  await page.getByRole("button", { name: "Open!" }).click();
+}
+
 export async function solvePlaceholder(page: Page) {
   await page.getByRole("button", { name: "Tap to solve" }).click();
 }
 
-/** Solve whatever puzzle this station shows. */
-export async function solveAny(page: Page) {
+/** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */
+export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
   if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
+  if (await page.locator(".dial-window").first().isVisible()) return solveLock(page, lockAnswers);
   return solvePlaceholder(page);
 }

@@ -76,3 +76,16 @@ export function grandFanfare() {
     { freq: 1568, at: 0.7, length: 1.1, type: "triangle", volume: 0.12 },
   ]);
 }
+
+/** A quick metallic rattle: a padlock that stays shut. Playful, not a buzzer. */
+export function rattle() {
+  play([0, 0.06, 0.12, 0.18].map((at, i) => ({ freq: i % 2 ? 1250 : 1050, slideTo: 700, at, length: 0.05, type: "square" as const, volume: 0.05 })));
+}
+
+/** The lock springs open. */
+export function unlock() {
+  play([
+    { freq: 300, slideTo: 900, at: 0, length: 0.12, type: "triangle", volume: 0.2 },
+    { freq: 1400, at: 0.1, length: 0.12, type: "sine", volume: 0.12 },
+  ]);
+}
