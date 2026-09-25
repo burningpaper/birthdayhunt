@@ -16,12 +16,12 @@ Status: Complete locally (recorder E2E-tested in WebKit). Remaining: record a cl
 ## Stage 3: Core puzzles
 Goal: Jigsaw → Memory Match → Counting Lock → Train Track, plus preview/test mode, difficulty presets and the hint system.
 Success Criteria: Each puzzle takes 2–5 minutes at Medium on the iPad; presets visibly change each; preview never writes progress; generators and presets unit-tested.
-Status: Not Started
+Status: Complete and deployed. All four puzzles, hints and stars are E2E-tested in WebKit. Remaining: timing each puzzle with the real player on the iPad (the 2–5 minute target).
 
 ## Stage 4: Polish
 Goal: Celebrations and stars, portrait screen, touch/zoom lockdown, "Not yet" screen, duplicate hunt, regenerate keys, validation checklist, live progress view.
 Success Criteria: Spec §10 acceptance criteria met for the four core puzzles.
-Status: Not Started
+Status: Mostly done, much of it landed early: stars, portrait screen, pinch/zoom/callout lockdown, "Not yet" screen, duplicate, re-key, go-live checklist (now also blocks unbuilt puzzles), live progress. Remaining: fixes from the parent's real-iPad test.
 
 ## Stage 5: Dress rehearsal
 Goal: Build the real hunt, print it, play it at home on the iPad.

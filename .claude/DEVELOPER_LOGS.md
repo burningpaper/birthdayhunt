@@ -35,3 +35,17 @@ Stage 2 is the parent's voice. `VoiceRecorder` wraps MediaRecorder with record, 
 Two testing lessons. Next 16 allows only one `next dev` per project, so the E2E suite now runs against `next build && next start`, which is closer to Vercel anyway. That exposed the login cookie's `Secure` flag being tied to `NODE_ENV` rather than the actual protocol. It now follows `x-forwarded-proto`.
 
 A postscript on the recorder. Right after Stage 2 landed, its E2E test turned flaky with "Nothing was recorded". The first fix was sound but didn't cure it: the mic tracks were being stopped before the recorder flushed, so now they're released inside `onstop`. Logging each recorder event settled the rest. WebKit's MP4 recorder ignores the timeslice and delivers one chunk at stop, and under load the AAC encoder sometimes hadn't produced anything 1.5 seconds in. A real parent speaks for several seconds, so the test now records for 3. If a clip ever does come out empty, the message now tells the parent to speak for a few seconds. Full suite: 3 runs out of 3 green. Also, test gates now check exit codes: a `grep` in the command chain let the flaky suite through to one commit.
+
+## 2026-09-25 — Four real puzzles
+
+All four core puzzles are built in one push. Each follows the same shape: pure logic with its own tests, a component on the shared `PuzzleProps` contract, a screenshot pass in WebKit, and an E2E solver that plays it through the real UI the way a child would. A shared stage wraps them all, with the hint button (it glows after 5 misses or 2 idle minutes) and 1 to 3 stars on the celebration.
+
+**Jigsaw** needed the most care, and taught three lessons worth keeping. First, a CSS `transform-box: fill-box` on an SVG group includes the *whole unclipped photo*, so rotated pieces swung off-screen. They now rotate about their own cell centre. Second, loose pieces need room: the board now shrinks until they fit beside it with at most about 20% overlap, and a test enforces that for every piece count and photo shape. Third, and nastiest: raising a touched piece to the top moves its DOM node, and moving a node silently drops pointer capture. A fast finger then released over a *different* piece, and the drop was committed to the wrong one. Drags now live on the board, and the dragged piece is always looked up by id.
+
+**Memory Match** first used the classic 3D card with `backface-visibility`. WebKit rendered every card face-up and mirrored. A flip is now two half-turns, the old face out edge-on and the new face in, so only one face ever exists.
+
+**Counting Lock** gives a single 0 to 99 dial two wheels, tens and ones, because nobody should tap "up" 47 times. The hint gives a direction without the answer: "Dial 2 is more than 1!"
+
+**Train Track** generates a winding route, fills the rest with decoys, and spins everything. Tests generate 180 boards and prove each is solvable twice: along its planted route, and by an independent depth-first solver. The E2E suite uses that same solver to play boards. The train ride is capped at 4 seconds, because a winding 6×6 route made it long enough to lose a seven-year-old's patience (and time out a test).
+
+Marble Run and Flick Golf remain stretch goals. They're marked "coming soon" in the editor, new hunts default to the four finished puzzles, and a hunt can't go live while a station uses an unbuilt one.
