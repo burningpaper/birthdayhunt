@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import path from "node:path";
+import { solveAny } from "./solvers";
 
 type Station = { id: string; key: string; order: number; puzzle: { type: string; questions?: { questionText: string; answer: number }[] }; clue: Record<string, unknown> };
 type Hunt = { id: string; status: string; stations: Station[] };
@@ -26,7 +27,8 @@ function stationPath(hunt: Hunt, index: number) {
 async function solveStation(page: Page, hunt: Hunt, index: number) {
   await page.goto(stationPath(hunt, index));
   await page.getByRole("button", { name: "Tap to start!" }).click();
-  await page.getByRole("button", { name: "Tap to solve" }).click();
+  await page.waitForLoadState("networkidle");
+  await solveAny(page);
   await expect(page.getByText(/You did it!|You solved every puzzle!/)).toBeVisible();
 }
 
@@ -98,7 +100,8 @@ test("a parent builds a hunt and a child plays it end to end", async ({ page, br
   await page.goto(`${stationPath(live, 4)}&preview=1`);
   await expect(page.getByText("Test mode: progress isn't saved")).toBeVisible();
   await page.getByRole("button", { name: "Tap to start!" }).click();
-  await page.getByRole("button", { name: "Tap to solve" }).click();
+  await page.waitForLoadState("networkidle");
+  await solveAny(page);
   await expect(page.getByText("You did it!")).toBeVisible();
   const afterPreview = await (await page.request.get(`/api/setup/hunts/${huntId}`)).json();
   expect(afterPreview.progress.completedStationIds).toHaveLength(1);

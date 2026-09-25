@@ -4,17 +4,16 @@ import { ArrowClockwise } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
-import { SpeakerButton } from "@/components/plastic/SpeakerButton";
 import { unlockAudio } from "@/lib/audio/engine";
 import { speak } from "@/lib/audio/voice";
 import type { ClueView, PlayResponse } from "@/lib/playState";
 import { PUZZLE_META } from "@/lib/puzzleMeta";
-import { PUZZLES } from "@/puzzles/registry";
 import { CelebrationScreen } from "./CelebrationScreen";
 import { ClueReveal } from "./ClueReveal";
 import { IntroScreen } from "./IntroScreen";
 import { InvalidScreen } from "./InvalidScreen";
 import { NotYetScreen } from "./NotYetScreen";
+import { PuzzleStage } from "./PuzzleStage";
 import { StationChip } from "./StationChip";
 
 type PlayableResponse = Extract<PlayResponse, { state: "play" }>;
@@ -58,9 +57,9 @@ type Phase =
 /** intro → puzzle → (save) → celebrate → clue */
 function PlayableStation({ response, huntId, stationKey, preview }: { response: PlayableResponse } & Omit<Props, "initial">) {
   const [phase, setPhase] = useState<Phase>({ name: "intro" });
+  const [stars, setStars] = useState<1 | 2 | 3>(3);
   const { station, puzzle } = response;
   const meta = PUZZLE_META[puzzle.type];
-  const Puzzle = PUZZLES[puzzle.type];
 
   const start = () => {
     unlockAudio();
@@ -88,7 +87,8 @@ function PlayableStation({ response, huntId, stationKey, preview }: { response: 
       <StationChip station={station} preview={preview} />
       <AnimatePresence mode="wait">
         <motion.div
-          key={phase.name}
+          // "saving" keeps the puzzle mounted, so the finished board stays on screen.
+          key={phase.name === "saving" ? "puzzle" : phase.name}
           className="absolute inset-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -98,20 +98,15 @@ function PlayableStation({ response, huntId, stationKey, preview }: { response: 
           {phase.name === "intro" && <IntroScreen puzzleType={puzzle.type} childName={response.childName} onStart={start} />}
 
           {(phase.name === "puzzle" || phase.name === "saving") && (
-            <div className="relative h-full pt-24">
-              <div className="absolute top-5 right-5 z-10 flex items-center gap-4">
-                <p className="max-w-[30ch] text-right text-2xl font-semibold text-balance">{meta.instruction}</p>
-                <SpeakerButton onSpeak={() => speak(meta.instruction)} />
-              </div>
-              <Puzzle
-                config={puzzle}
-                difficulty={response.difficulty}
-                cluePhotoUrl={response.puzzlePhotoUrl}
-                onSolved={() => {
-                  if (phase.name === "puzzle") void submitSolve();
-                }}
-              />
-            </div>
+            <PuzzleStage
+              puzzle={puzzle}
+              difficulty={response.difficulty}
+              puzzlePhotoUrl={response.puzzlePhotoUrl}
+              onSolved={(earned) => {
+                setStars(earned);
+                void submitSolve();
+              }}
+            />
           )}
 
           {phase.name === "saveFailed" && (
@@ -126,7 +121,7 @@ function PlayableStation({ response, huntId, stationKey, preview }: { response: 
             </div>
           )}
 
-          {phase.name === "celebrate" && <CelebrationScreen puzzleType={puzzle.type} isFinal={phase.clue.isFinal} />}
+          {phase.name === "celebrate" && <CelebrationScreen puzzleType={puzzle.type} isFinal={phase.clue.isFinal} stars={stars} />}
           {phase.name === "clue" && <ClueReveal clue={phase.clue} />}
         </motion.div>
       </AnimatePresence>

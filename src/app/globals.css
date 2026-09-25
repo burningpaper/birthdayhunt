@@ -201,3 +201,53 @@ body {
     font-size: 26pt;
   }
 }
+
+/* ---------- Jigsaw ---------- */
+
+.jigsaw-piece {
+  cursor: grab;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.jigsaw-piece.is-placed {
+  cursor: default;
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Picked up: a touch bigger, like lifting a real piece off the table. */
+.jigsaw-piece.is-lifted .jigsaw-turn {
+  scale: 1.06;
+}
+
+.jigsaw-turn {
+  transform-box: view-box;
+  transition:
+    transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    scale 120ms ease-out;
+}
+
+@keyframes jigsaw-hint-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.jigsaw-hint {
+  pointer-events: none;
+  animation: jigsaw-hint-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes jigsaw-complete-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.jigsaw-complete {
+  pointer-events: none;
+  animation: jigsaw-complete-in 400ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jigsaw-piece,
+  .jigsaw-turn { transition: none; }
+  .jigsaw-hint { animation: none; }
+}
