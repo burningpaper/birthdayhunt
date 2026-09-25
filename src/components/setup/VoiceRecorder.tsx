@@ -18,6 +18,8 @@ type Props = {
   emphasis?: "primary" | "quiet";
 };
 
+const FLUSH_GRACE_MS = 150;
+
 type State =
   | { kind: "idle" }
   | { kind: "starting" }
@@ -80,9 +82,15 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
     rec.ondataavailable = (event) => {
       if (event.data.size > 0) chunks.current.push(event.data);
     };
-    rec.onstop = () => void finish(rec.mimeType || mime || "audio/mp4");
+    // Release the mic only once the recorder has flushed. WebKit's MP4
+    // recorder ignores the timeslice and delivers everything at stop, so
+    // assemble the clip a beat later as insurance against a late chunk.
+    rec.onstop = () => {
+      releaseMic();
+      setTimeout(() => void finish(rec.mimeType || mime || "audio/mp4"), FLUSH_GRACE_MS);
+    };
     recorder.current = rec;
-    rec.start();
+    rec.start(1000); // 1s slices: audio is collected as it goes, not all at the end
 
     const startedAt = Date.now();
     setElapsed(0);
@@ -95,15 +103,18 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
   }
 
   function stop() {
+    if (ticker.current) clearInterval(ticker.current);
+    ticker.current = null;
     if (recorder.current?.state === "recording") recorder.current.stop();
-    releaseMic();
+    else releaseMic();
   }
 
   async function finish(mime: string) {
     const clip = new Blob(chunks.current, { type: mime });
     if (clip.size === 0) {
       setState({ kind: "idle" });
-      setError("Nothing was recorded. Try again.");
+      // Seen in WebKit when a clip is very short: the encoder hadn't warmed up yet.
+      setError("That recording came out empty. Try again, and speak for a few seconds.");
       return;
     }
     setState({ kind: "uploading" });

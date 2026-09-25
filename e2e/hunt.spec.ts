@@ -138,7 +138,8 @@ test("a parent records a voice clue and plays it back", async ({ page, context, 
 
   await page.getByRole("button", { name: "Record voice clue" }).first().click();
   await expect(page.getByText(/Recording 0:0/)).toBeVisible();
-  await page.waitForTimeout(1500);
+  // Speak for a realistic few seconds: WebKit's encoder can take over a second to warm up.
+  await page.waitForTimeout(3000);
   await page.getByRole("button", { name: "Stop" }).first().click();
 
   await expect(page.getByRole("button", { name: "Play voice clue" }).first()).toBeVisible();
