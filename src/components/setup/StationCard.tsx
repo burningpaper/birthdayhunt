@@ -11,6 +11,7 @@ import { clueTargetLabel } from "@/lib/validation";
 import { CluePhotoField } from "./CluePhotoField";
 import { PuzzleOptions } from "./PuzzleOptions";
 import { Field, Panel, QuietButton, Select, TextArea, TextInput, Toggle } from "./ui";
+import { VoiceRecorder } from "./VoiceRecorder";
 
 type Props = {
   station: Station;
@@ -78,7 +79,7 @@ export function StationCard({ station, total, difficulty, mediaMode, canRemove, 
             ))}
           </Select>
         </Field>
-        <PuzzleOptions puzzle={station.puzzle} onChange={(puzzle) => set({ puzzle })} />
+        <PuzzleOptions puzzle={station.puzzle} mediaMode={mediaMode} onChange={(puzzle) => set({ puzzle })} />
       </div>
 
       <div className="grid gap-4 rounded-[var(--radius-button)] bg-sunflower/12 p-5">
@@ -91,6 +92,11 @@ export function StationCard({ station, total, difficulty, mediaMode, canRemove, 
           </p>
         </div>
         <CluePhotoField url={station.clue.photoUrl} mediaMode={mediaMode} onChange={(photoUrl) => setClue({ photoUrl })} />
+        <div className="grid gap-2">
+          <span className="text-sm font-bold text-ink">Voice clue (optional)</span>
+          <VoiceRecorder url={station.clue.audioUrl} mediaMode={mediaMode} onChange={(audioUrl) => setClue({ audioUrl })} />
+          <span className="text-sm text-ink/65">Plays automatically when the clue appears, with a big replay button.</span>
+        </div>
         <Field label="Clue text (optional)" hint="A riddle or a hint. Turn it on to show it big on screen, and it's read aloud too.">
           <TextArea value={station.clue.text ?? ""} placeholder="I keep things cold and hum all night" maxLength={300} onChange={(e) => setClue({ text: e.target.value || undefined })} />
         </Field>

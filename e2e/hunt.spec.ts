@@ -129,3 +129,27 @@ test("the setup area requires the PIN", async ({ page, request }) => {
   await expect(page.getByText("That PIN didn't match. Try again.")).toBeVisible();
   expect((await request.get("/api/setup/hunts")).status()).toBe(401);
 });
+
+test("a parent records a voice clue and plays it back", async ({ page, context, browserName }) => {
+  await context.grantPermissions(["microphone"]).catch(() => undefined);
+  await signIn(page);
+  await page.getByRole("button", { name: "New hunt" }).click();
+  await expect(page).toHaveURL(/\/setup\/hunts\//);
+
+  await page.getByRole("button", { name: "Record voice clue" }).first().click();
+  await expect(page.getByText(/Recording 0:0/)).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.getByRole("button", { name: "Stop" }).first().click();
+
+  await expect(page.getByRole("button", { name: "Play voice clue" }).first()).toBeVisible();
+  await expect(page.getByText("All changes saved")).toBeVisible();
+
+  // The clip was stored and is servable as audio.
+  const huntId = page.url().split("/").pop()!;
+  const hunt = (await (await page.request.get(`/api/setup/hunts/${huntId}`)).json()).hunt;
+  const audioUrl: string = hunt.stations[0].clue.audioUrl;
+  expect(audioUrl, `recorded in ${browserName}`).toMatch(/^\/api\/media\/[a-z0-9]{16}\.(m4a|webm|ogg)$/);
+  const media = await page.request.get(audioUrl);
+  expect(media.ok()).toBe(true);
+  expect(media.headers()["content-type"]).toMatch(/^audio\//);
+});

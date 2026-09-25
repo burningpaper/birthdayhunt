@@ -10,8 +10,23 @@ import { sharedVoiceElement } from "./engine";
 
 const PREFERRED_LANGS = ["en-ZA", "en-GB", "en-AU", "en-IE", "en-NZ"];
 
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+/**
+ * Browsers load their voice list asynchronously; the first getVoices() call
+ * is often empty. Warm the list up as soon as this module loads, so even the
+ * very first spoken line gets the preferred accent.
+ */
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  const refresh = () => {
+    cachedVoices = window.speechSynthesis.getVoices();
+  };
+  refresh();
+  window.speechSynthesis.addEventListener?.("voiceschanged", refresh);
+}
+
 function pickVoice(): SpeechSynthesisVoice | undefined {
-  const voices = window.speechSynthesis.getVoices();
+  const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
   for (const lang of PREFERRED_LANGS) {
     const match = voices.find((v) => v.lang.replace("_", "-") === lang);
     if (match) return match;

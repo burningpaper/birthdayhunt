@@ -22,10 +22,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `rm -rf .data-e2e && next dev -p ${PORT}`,
+    // A production build, not `next dev`: Next 16 allows one dev server per
+    // project, and the developer usually has one running already.
+    command: `rm -rf .data-e2e && next build && next start -p ${PORT}`,
     port: PORT,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 240_000,
     env: {
       DATA_DIR: ".data-e2e",
       SETUP_PIN: "2468",

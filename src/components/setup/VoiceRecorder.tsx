@@ -1,0 +1,193 @@
+"use client";
+
+import { ArrowCounterClockwise, Microphone, Play, Stop, Trash } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { PlasticButton } from "@/components/plastic/PlasticButton";
+import { formatDuration, mightNotPlayOnIpad, pickRecordingMime, recordingExtension } from "@/lib/recording";
+import { uploadMedia, type MediaMode } from "@/lib/uploadClient";
+import { QuietButton } from "./ui";
+
+type Props = {
+  url?: string;
+  mediaMode: MediaMode;
+  onChange: (url: string | undefined) => void;
+  /** What the parent is recording, for button labels: "voice clue", "question". */
+  noun?: string;
+  maxSeconds?: number;
+  /** "primary" is a plastic button; "quiet" suits optional extras like lock questions. */
+  emphasis?: "primary" | "quiet";
+};
+
+type State =
+  | { kind: "idle" }
+  | { kind: "starting" }
+  | { kind: "recording"; startedAt: number }
+  | { kind: "uploading" };
+
+/**
+ * Record a clip with MediaRecorder and upload it. Safari records audio/mp4,
+ * which is exactly what the child's iPad plays best (see lib/recording.ts).
+ */
+export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", maxSeconds = 60, emphasis = "primary" }: Props) {
+  const [state, setState] = useState<State>({ kind: "idle" });
+  const [elapsed, setElapsed] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const recorder = useRef<MediaRecorder | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const ticker = useRef<ReturnType<typeof setInterval> | null>(null);
+  const player = useRef<HTMLAudioElement | null>(null);
+
+  const releaseMic = () => {
+    stream.current?.getTracks().forEach((track) => track.stop());
+    stream.current = null;
+    if (ticker.current) clearInterval(ticker.current);
+    ticker.current = null;
+  };
+
+  useEffect(() => () => {
+    releaseMic();
+    player.current?.pause();
+  }, []);
+
+  async function start() {
+    setError(null);
+    setWarning(null);
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setError("This browser can't record audio. Try Safari on the iPad.");
+      return;
+    }
+    setState({ kind: "starting" });
+    try {
+      stream.current = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    } catch (err) {
+      console.warn("[recorder] microphone permission failed", err);
+      setState({ kind: "idle" });
+      setError(
+        (err as DOMException).name === "NotAllowedError"
+          ? "The microphone is blocked. Allow it for this site in your browser settings, then try again."
+          : "Couldn't find a microphone.",
+      );
+      return;
+    }
+
+    const mime = pickRecordingMime((m) => MediaRecorder.isTypeSupported(m));
+    const rec = new MediaRecorder(stream.current, mime ? { mimeType: mime } : undefined);
+    chunks.current = [];
+    rec.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.current.push(event.data);
+    };
+    rec.onstop = () => void finish(rec.mimeType || mime || "audio/mp4");
+    recorder.current = rec;
+    rec.start();
+
+    const startedAt = Date.now();
+    setElapsed(0);
+    setState({ kind: "recording", startedAt });
+    ticker.current = setInterval(() => {
+      const seconds = (Date.now() - startedAt) / 1000;
+      setElapsed(seconds);
+      if (seconds >= maxSeconds) stop();
+    }, 250);
+  }
+
+  function stop() {
+    if (recorder.current?.state === "recording") recorder.current.stop();
+    releaseMic();
+  }
+
+  async function finish(mime: string) {
+    const clip = new Blob(chunks.current, { type: mime });
+    if (clip.size === 0) {
+      setState({ kind: "idle" });
+      setError("Nothing was recorded. Try again.");
+      return;
+    }
+    setState({ kind: "uploading" });
+    try {
+      const uploaded = await uploadMedia(clip, `${noun.replace(/\s+/g, "-")}-${Date.now()}.${recordingExtension(mime)}`, mediaMode);
+      onChange(uploaded);
+      if (mightNotPlayOnIpad(mime)) {
+        setWarning("This browser saved the recording as WebM, which some iPads can't play. Record it on the iPad to be safe.");
+      }
+    } catch (err) {
+      console.error("[recorder] upload failed", err);
+      setError(err instanceof Error ? err.message : "The recording didn't upload. Try again.");
+    } finally {
+      setState({ kind: "idle" });
+    }
+  }
+
+  function togglePlay() {
+    if (!url) return;
+    if (playing) {
+      player.current?.pause();
+      setPlaying(false);
+      return;
+    }
+    const audio = player.current ?? new Audio();
+    player.current = audio;
+    audio.src = url;
+    audio.onended = () => setPlaying(false);
+    audio.play().then(
+      () => setPlaying(true),
+      (err) => {
+        console.warn("[recorder] playback failed", err);
+        setError("Couldn't play that recording on this device.");
+      },
+    );
+  }
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex flex-wrap items-center gap-3">
+        {state.kind === "recording" ? (
+          <>
+            <PlasticButton size="sm" color="tomato" onClick={stop}>
+              <Stop weight="fill" size={20} />
+              Stop
+            </PlasticButton>
+            <span className="flex items-center gap-2 text-base font-semibold text-ink" aria-live="polite">
+              <span className="size-3 animate-pulse rounded-full bg-tomato motion-reduce:animate-none" aria-hidden />
+              Recording {formatDuration(elapsed)}
+              <span className="font-normal text-ink/55">of {formatDuration(maxSeconds)}</span>
+            </span>
+          </>
+        ) : state.kind === "uploading" ? (
+          <span className="text-base font-semibold text-ink/70" role="status">Saving recording…</span>
+        ) : state.kind === "starting" ? (
+          <span className="text-base font-semibold text-ink/70" role="status">Asking for the microphone…</span>
+        ) : url ? (
+          <>
+            <QuietButton onClick={togglePlay}>
+              {playing ? <Stop weight="fill" size={18} /> : <Play weight="fill" size={18} />}
+              {playing ? "Stop" : `Play ${noun}`}
+            </QuietButton>
+            <QuietButton onClick={() => void start()}>
+              <ArrowCounterClockwise weight="bold" size={18} />
+              Re-record
+            </QuietButton>
+            <QuietButton tone="danger" onClick={() => onChange(undefined)} aria-label={`Delete ${noun}`}>
+              <Trash weight="bold" size={18} />
+            </QuietButton>
+          </>
+        ) : emphasis === "quiet" ? (
+          <QuietButton onClick={() => void start()}>
+            <Microphone weight="fill" size={18} className="text-tomato" />
+            Record {noun} (optional)
+          </QuietButton>
+        ) : (
+          <PlasticButton size="sm" color="tomato" onClick={() => void start()}>
+            <Microphone weight="fill" size={20} />
+            Record {noun}
+          </PlasticButton>
+        )}
+      </div>
+      {warning && <p className="text-sm font-semibold text-[#9A5B00]">{warning}</p>}
+      {error && <p role="alert" className="text-sm font-semibold text-[#B42318]">{error}</p>}
+    </div>
+  );
+}

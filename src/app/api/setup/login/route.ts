@@ -26,12 +26,18 @@ export async function POST(request: Request) {
 
   (await cookies()).set(SESSION_COOKIE, createSessionToken(secret), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps(request),
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
   });
   return Response.json({ ok: true });
+}
+
+/** https on Vercel (behind its proxy), plain http for a local production build. */
+function isHttps(request: Request): boolean {
+  const forwarded = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  return (forwarded ?? new URL(request.url).protocol.replace(":", "")) === "https";
 }
 
 export async function DELETE() {

@@ -6,12 +6,12 @@ Stack: Next.js 16 (App Router, TS strict) · Tailwind v4 · Upstash Redis · Ver
 ## Stage 1: Skeleton — playable end to end
 Goal: Project scaffold, PIN login (HMAC-signed cookie, rate-limited), hunt CRUD, station editor (photo upload + text), play route with order enforcement (`lib/playState.ts`), placeholder "Tap to solve" puzzle, clue reveal, finale, A4 QR print page. Deployed to Vercel.
 Success Criteria: A 6-station hunt printed and scanned with the iPad Camera app plays through end to end; out-of-order scans leak no future clue; reload keeps progress; `playState` unit-tested; happy-path E2E passes.
-Status: Complete locally (43 unit + 3 WebKit E2E passing). Remaining: deploy to Vercel and scan a printed code on the real iPad.
+Status: Complete and deployed (https://birthdayhunt-phi.vercel.app). Remaining: scan a printed code on the real iPad.
 
 ## Stage 2: Audio
 Goal: "Tap to start" audio unlock, MediaRecorder voice clues (audio/mp4 on Safari), auto-play + replay on reveal, `speak()` with en-GB/en-ZA voices, SFX.
 Success Criteria: Clue recorded on the iPad is heard after scanning the next QR in Safari.
-Status: Not Started
+Status: Complete locally (recorder E2E-tested in WebKit). Remaining: record a clue on the real iPad against production and hear it after a scan.
 
 ## Stage 3: Core puzzles
 Goal: Jigsaw → Memory Match → Counting Lock → Train Track, plus preview/test mode, difficulty presets and the hint system.

@@ -2,15 +2,17 @@
 
 import { withLockDigits } from "@/lib/difficulty";
 import type { LockQuestion, PuzzleConfig } from "@/lib/schema";
+import type { MediaMode } from "@/lib/uploadClient";
 import { Field, Segmented, TextInput, Toggle } from "./ui";
+import { VoiceRecorder } from "./VoiceRecorder";
 
-type Props = { puzzle: PuzzleConfig; onChange: (puzzle: PuzzleConfig) => void };
+type Props = { puzzle: PuzzleConfig; mediaMode: MediaMode; onChange: (puzzle: PuzzleConfig) => void };
 
 const numbers = <T extends number>(values: readonly T[], suffix = "") =>
   values.map((value) => ({ value, label: `${value}${suffix}` }));
 
 /** The knobs for whichever puzzle this station uses. */
-export function PuzzleOptions({ puzzle, onChange }: Props) {
+export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
   switch (puzzle.type) {
     case "jigsaw":
       return (
@@ -28,11 +30,13 @@ export function PuzzleOptions({ puzzle, onChange }: Props) {
     case "flickGolf":
       return <Segmented label="Holes" options={numbers([1, 2, 3, 4, 5] as const).map((o) => ({ ...o, label: o.value === 1 ? "1 hole" : `${o.value} holes` }))} value={puzzle.holes} onChange={(holes) => onChange({ ...puzzle, holes })} />;
     case "countingLock":
-      return <LockOptions puzzle={puzzle} onChange={onChange} />;
+      return <LockOptions puzzle={puzzle} mediaMode={mediaMode} onChange={onChange} />;
   }
 }
 
-function LockOptions({ puzzle, onChange }: { puzzle: PuzzleConfig & { type: "countingLock" }; onChange: (p: PuzzleConfig) => void }) {
+type LockProps = { puzzle: PuzzleConfig & { type: "countingLock" }; mediaMode: MediaMode; onChange: (p: PuzzleConfig) => void };
+
+function LockOptions({ puzzle, mediaMode, onChange }: LockProps) {
   const max = puzzle.digits === 1 ? 99 : 9;
 
   const setQuestion = (index: number, patch: Partial<LockQuestion>) =>
@@ -64,6 +68,16 @@ function LockOptions({ puzzle, onChange }: { puzzle: PuzzleConfig & { type: "cou
               />
               <span id={`dial-${i}-range`} className="sr-only">From 0 to {max}</span>
             </Field>
+            <div className="sm:col-span-2">
+              <VoiceRecorder
+                noun="question"
+                emphasis="quiet"
+                maxSeconds={20}
+                url={question.questionAudioUrl}
+                mediaMode={mediaMode}
+                onChange={(questionAudioUrl) => setQuestion(i, { questionAudioUrl })}
+              />
+            </div>
           </li>
         ))}
       </ol>
