@@ -38,6 +38,13 @@ describe("file store", () => {
     expect(await store.getProgress(hunt.id)).toBeNull();
   });
 
+  it("reads hits without adding one", async () => {
+    expect(await store.readHits("login:9.9.9.9")).toBe(0);
+    await store.countHit("login:9.9.9.9", 60);
+    expect(await store.readHits("login:9.9.9.9")).toBe(1);
+    expect(await store.readHits("login:9.9.9.9")).toBe(1);
+  });
+
   it("counts hits within a window", async () => {
     expect(await store.countHit("login:1.2.3.4", 60)).toBe(1);
     expect(await store.countHit("login:1.2.3.4", 60)).toBe(2);

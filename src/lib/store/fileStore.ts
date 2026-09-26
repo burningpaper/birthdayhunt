@@ -81,5 +81,10 @@ export function createFileStore(dir: string): Store {
       entry.count += 1;
       return entry.count;
     },
+
+    async readHits(key) {
+      const entry = hits.get(key);
+      return entry && entry.resetAt >= Date.now() ? entry.count : 0;
+    },
   };
 }

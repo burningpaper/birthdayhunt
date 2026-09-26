@@ -14,13 +14,18 @@ export async function POST(request: Request) {
   const parsed = await readJson(request, LoginBody);
   if ("response" in parsed) return parsed.response;
 
-  const attempts = await getStore().countHit(`login:${clientIp(request)}`, WINDOW_SECONDS);
-  if (attempts > MAX_ATTEMPTS) {
+  // Only wrong PINs count towards the limit, so a parent signing in on
+  // several devices is never locked out. The lock is checked before the PIN,
+  // so once it's on, even a correct guess can't get through.
+  const store = getStore();
+  const limitKey = `login:${clientIp(request)}`;
+  if ((await store.readHits(limitKey)) >= MAX_ATTEMPTS) {
     return jsonError(429, "Too many tries. Wait 15 minutes and try again.");
   }
 
   const { pin, secret } = authConfig();
   if (!pinMatches(parsed.data.pin, pin, secret)) {
+    await store.countHit(limitKey, WINDOW_SECONDS);
     return jsonError(401, "That PIN didn't match. Try again.");
   }
 

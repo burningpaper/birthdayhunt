@@ -16,4 +16,6 @@ export interface Store {
 
   /** Count a hit against `key` within a window. Returns the count so far. */
   countHit(key: string, windowSeconds: number): Promise<number>;
+  /** How many hits `key` has in its current window, without adding one. */
+  readHits(key: string): Promise<number>;
 }

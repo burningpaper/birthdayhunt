@@ -48,5 +48,9 @@ export function createRedisStore(url: string, token: string): Store {
       const [count] = await redis.multi().incr(fullKey).expire(fullKey, windowSeconds, "NX").exec<[number, number]>();
       return count;
     },
+
+    async readHits(key) {
+      return Number((await redis.get<number>(`hits:${key}`)) ?? 0);
+    },
   };
 }
