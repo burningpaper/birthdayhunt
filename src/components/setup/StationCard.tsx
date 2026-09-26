@@ -9,6 +9,7 @@ import { PUZZLE_TYPES, type Difficulty, type PuzzleType, type Station } from "@/
 import type { MediaMode } from "@/lib/uploadClient";
 import { clueTargetLabel } from "@/lib/validation";
 import { CluePhotoField } from "./CluePhotoField";
+import { JigsawCropField } from "./JigsawCropField";
 import { PuzzleOptions } from "./PuzzleOptions";
 import { Field, Panel, QuietButton, Select, TextArea, TextInput, Toggle } from "./ui";
 import { VoiceRecorder } from "./VoiceRecorder";
@@ -91,10 +92,31 @@ export function StationCard({ station, total, difficulty, mediaMode, canRemove, 
           <p className="text-base text-ink/70">
             Revealed after this puzzle is solved.{" "}
             {station.order < total ? `Photograph where you'll hide station ${station.order + 1}.` : "Photograph where the treasure is."}
-            {station.puzzle.type === "jigsaw" && " This photo is also the jigsaw picture."}
+            {station.puzzle.type === "jigsaw" && (station.puzzle.crop ? " A close-up of this photo is the jigsaw picture." : " This photo is also the jigsaw picture.")}
           </p>
         </div>
-        <CluePhotoField url={station.clue.photoUrl} mediaMode={mediaMode} onChange={(photoUrl) => setClue({ photoUrl })} />
+        <CluePhotoField
+          url={station.clue.photoUrl}
+          mediaMode={mediaMode}
+          onChange={(photoUrl) =>
+            set({
+              clue: { ...station.clue, photoUrl },
+              // A close-up belongs to its photo: a new photo starts from the whole picture.
+              puzzle: station.puzzle.type === "jigsaw" ? { type: "jigsaw", pieces: station.puzzle.pieces, rotation: station.puzzle.rotation } : station.puzzle,
+            })
+          }
+        />
+        {station.puzzle.type === "jigsaw" && station.clue.photoUrl && (
+          <JigsawCropField
+            photoUrl={station.clue.photoUrl}
+            crop={station.puzzle.crop}
+            onChange={(crop) => {
+              if (station.puzzle.type !== "jigsaw") return;
+              const { type, pieces, rotation } = station.puzzle;
+              set({ puzzle: crop ? { type, pieces, rotation, crop } : { type, pieces, rotation } });
+            }}
+          />
+        )}
         <div className="grid gap-2">
           <span className="text-sm font-bold text-ink">Voice clue (optional)</span>
           <VoiceRecorder url={station.clue.audioUrl} mediaMode={mediaMode} onChange={(audioUrl) => setClue({ audioUrl })} />

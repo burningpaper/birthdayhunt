@@ -38,6 +38,11 @@ describe("difficulty presets", () => {
     expect(easier).toEqual({ ...lock, digits: 2, questions: lock.questions.slice(0, 2) });
   });
 
+  it("keeps a jigsaw close-up when the preset changes", () => {
+    const jigsaw = { type: "jigsaw" as const, pieces: 12 as const, rotation: false, crop: { x: 0.1, y: 0.2, size: 0.5 } };
+    expect(applyDifficulty(jigsaw, "hard")).toEqual({ type: "jigsaw", pieces: 16, rotation: true, crop: { x: 0.1, y: 0.2, size: 0.5 } });
+  });
+
   it("pads lock questions when dials are added", () => {
     const lock = withLockDigits({ type: "countingLock", digits: 1, questions: [{ questionText: "Chairs?", answer: 12 }] }, 3);
     expect(lock.questions).toHaveLength(3);
@@ -71,6 +76,20 @@ describe("hunt factory", () => {
     expect(copy.stations[0].key).not.toBe(source.stations[0].key);
     expect(copy.stations.map((s) => s.puzzle)).toEqual(source.stations.map((s) => s.puzzle));
     expect(HuntSchema.safeParse(copy).success).toBe(true);
+  });
+
+  it("drops jigsaw close-ups on duplicate, since the photos are re-shot", () => {
+    const source = newHunt("Birthday");
+    source.stations[0].puzzle = { type: "jigsaw", pieces: 9, rotation: true, crop: { x: 0.1, y: 0.1, size: 0.4 } };
+    expect(duplicateHunt(source).stations[0].puzzle).toEqual({ type: "jigsaw", pieces: 9, rotation: true });
+  });
+
+  it("validates a close-up stays inside the photo", () => {
+    const hunt = newHunt("Birthday");
+    hunt.stations[0].puzzle = { type: "jigsaw", pieces: 12, rotation: false, crop: { x: 0.7, y: 0, size: 0.5 } };
+    expect(HuntSchema.safeParse(hunt).success).toBe(false);
+    hunt.stations[0].puzzle = { type: "jigsaw", pieces: 12, rotation: false, crop: { x: 0.5, y: 0.5, size: 0.5 } };
+    expect(HuntSchema.safeParse(hunt).success).toBe(true);
   });
 
   it("regenerates every key", () => {

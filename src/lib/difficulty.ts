@@ -64,10 +64,13 @@ export function defaultPuzzle(type: PuzzleType, difficulty: Difficulty): PuzzleC
 
 /**
  * Re-apply a difficulty preset to an existing puzzle, keeping the parent's
- * own content (memory photos, lock questions) intact.
+ * own content (jigsaw close-up, memory photos, lock questions) intact.
  */
 export function applyDifficulty(puzzle: PuzzleConfig, difficulty: Difficulty): PuzzleConfig {
   const fresh = defaultPuzzle(puzzle.type, difficulty);
+  if (puzzle.type === "jigsaw" && fresh.type === "jigsaw") {
+    return puzzle.crop ? { ...fresh, crop: puzzle.crop } : fresh;
+  }
   if (puzzle.type === "memoryMatch" && fresh.type === "memoryMatch") {
     return { ...fresh, photoUrls: puzzle.photoUrls };
   }

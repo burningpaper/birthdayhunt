@@ -99,3 +99,12 @@ export function toot() {
     { freq: 740, at: 0.24, length: 0.3, type: "triangle", volume: 0.12 },
   ]);
 }
+
+/** A long rising shimmer: the jigsaw close-up pulling back to the whole photo. */
+export function reveal() {
+  play([
+    { freq: 262, slideTo: 1047, at: 0, length: 1.5, type: "triangle", volume: 0.12 },
+    { freq: 392, slideTo: 1568, at: 0.1, length: 1.4, type: "sine", volume: 0.06 },
+    { freq: 2093, at: 1.35, length: 0.5, type: "sine", volume: 0.08 },
+  ]);
+}

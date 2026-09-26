@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
-import { snap as snapSound, tock } from "@/lib/audio/sfx";
+import { reveal as revealSound, snap as snapSound, tock } from "@/lib/audio/sfx";
 import { hashSeed } from "../random";
+import { fullImageRect, zoomOutFrom, type Crop } from "./crop";
 import type { PuzzleProps } from "../types";
 import { useElementSize } from "../useElementSize";
 import {
@@ -26,6 +27,10 @@ type Piece = { id: number; col: number; row: number; path: string } & Move;
 const TAP_SLOP = 8;
 const HINT_MS = 2500;
 const SOLVED_PAUSE_MS = 700;
+/** Close-up finish: settle (500ms), pull back to the whole photo (2200ms), let it land (1000ms). */
+const ZOOM_DELAY_MS = 500;
+const ZOOM_MS = 2200;
+const ZOOM_REVEAL_TOTAL_MS = ZOOM_DELAY_MS + ZOOM_MS + 1000;
 
 /**
  * Picture Jigsaw (spec §6.1). The clue photo is cut into tabbed pieces and
@@ -61,6 +66,7 @@ export function Jigsaw({ config, difficulty, cluePhotoUrl, onSolved, onAttemptFa
           height={size.height}
           pieces={config.pieces}
           rotation={config.rotation}
+          crop={config.crop}
           ghost={difficulty === "easy"}
           hintRequest={hintRequest}
           onSolved={onSolved}
@@ -82,17 +88,19 @@ type BoardProps = {
   pieces: 6 | 9 | 12 | 16;
   rotation: boolean;
   ghost: boolean;
+  /** A mystery close-up to build instead of the whole photo. */
+  crop?: Crop;
   hintRequest: number;
   onSolved: () => void;
   onAttemptFailed?: () => void;
   onProgress?: () => void;
 };
 
-function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, ghost, hintRequest, onSolved, onAttemptFailed, onProgress }: BoardProps) {
+function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, crop, ghost, hintRequest, onSolved, onAttemptFailed, onProgress }: BoardProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const { cols, rows } = gridFor(pieceCount, aspect);
   const layout: Layout = useMemo(() => computeLayout(width, height, aspect, cols, rows), [width, height, aspect, cols, rows]);
-  const seed = hashSeed(`${photoUrl}:${pieceCount}`);
+  const seed = hashSeed(`${photoUrl}:${pieceCount}:${crop ? `${crop.x},${crop.y},${crop.size}` : "whole"}`);
 
   // Everything about the starting layout derives from the seed, so it needs no state.
   const start = useMemo(() => {
@@ -196,7 +204,7 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
       onProgress?.();
       if (placedCount + 1 === pieces.length) {
         setSolved(true);
-        setTimeout(onSolved, SOLVED_PAUSE_MS);
+        setTimeout(onSolved, crop ? ZOOM_REVEAL_TOTAL_MS : SOLVED_PAUSE_MS);
       }
       return;
     }
@@ -207,6 +215,8 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
   // Placed pieces sit underneath; the rest stack in the order they were touched.
   const drawOrder = [...pieces].sort((a, b) => Number(b.placed) - Number(a.placed) || order.indexOf(a.id) - order.indexOf(b.id));
   const { board } = layout;
+  // Where the whole photo is drawn so the close-up (if any) exactly fills the board.
+  const photo = fullImageRect(board, crop);
 
   return (
     <svg
@@ -218,6 +228,9 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
       height={height}
       data-cell={`${layout.cellW},${layout.cellH}`} className="jigsaw absolute inset-0 touch-none select-none" role="img" aria-label={`Jigsaw puzzle, ${placedCount} of ${pieces.length} pieces placed`}>
       <defs>
+        <clipPath id={`${uid}-board`}>
+          <rect x={board.x} y={board.y} width={board.w} height={board.h} />
+        </clipPath>
         <filter id={`${uid}-shadow`} x="-30%" y="-30%" width="160%" height="160%">
           <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#080e24" floodOpacity="0.55" />
         </filter>
@@ -230,7 +243,11 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
 
       {/* The tray the picture is built in. */}
       <rect x={board.x - 6} y={board.y - 6} width={board.w + 12} height={board.h + 12} rx={18} className="fill-toybox-glow/60 stroke-cream/25" strokeWidth={2} strokeDasharray="10 8" />
-      {ghost && <image href={photoUrl} x={board.x} y={board.y} width={board.w} height={board.h} preserveAspectRatio="none" opacity={0.22} />}
+      {ghost && (
+        <g clipPath={`url(#${uid}-board)`}>
+          <image href={photoUrl} x={photo.x} y={photo.y} width={photo.w} height={photo.h} preserveAspectRatio="none" opacity={0.22} />
+        </g>
+      )}
 
       {drawOrder.map((p) => (
         <g
@@ -247,7 +264,14 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
           {/* Rotate about the cell's centre. (Not fill-box: a group's box includes the whole unclipped photo.) */}
           <g className="jigsaw-turn" style={{ transform: `rotate(${p.turns * 90}deg)`, transformOrigin: `${layout.cellW / 2}px ${layout.cellH / 2}px` }}>
             <g clipPath={`url(#${uid}-clip-${p.id})`}>
-              <image href={photoUrl} x={-p.col * layout.cellW} y={-p.row * layout.cellH} width={board.w} height={board.h} preserveAspectRatio="none" />
+              <image
+                href={photoUrl}
+                x={photo.x - board.x - p.col * layout.cellW}
+                y={photo.y - board.y - p.row * layout.cellH}
+                width={photo.w}
+                height={photo.h}
+                preserveAspectRatio="none"
+              />
             </g>
             {!solved && <path d={p.path} fill="none" stroke={p.placed ? "rgb(255 255 255 / 0.18)" : "rgb(255 255 255 / 0.6)"} strokeWidth={p.placed ? 1 : 2} />}
           </g>
@@ -255,7 +279,8 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
       ))}
 
       {/* Finished: the whole photo fades in over the pieces, hiding the seams. */}
-      {solved && <image href={photoUrl} x={board.x} y={board.y} width={board.w} height={board.h} preserveAspectRatio="none" className="jigsaw-complete" />}
+      {/* Finished: the seamless photo fades in over the pieces; a close-up then pulls back to the whole photo. */}
+      {solved && <FinishedPicture photoUrl={photoUrl} board={board} crop={crop} clipId={`${uid}-board`} />}
 
       {hintPiece && (
         <path
@@ -268,5 +293,41 @@ function Board({ photoUrl, aspect, width, height, pieces: pieceCount, rotation, 
         />
       )}
     </svg>
+  );
+}
+
+/**
+ * The completed picture. With a close-up, the whole photo is drawn at board
+ * size and starts blown up so only the close-up shows (looking exactly like
+ * the finished pieces), then animates back to full size: the zoom-out reveal.
+ */
+function FinishedPicture({ photoUrl, board, crop, clipId }: { photoUrl: string; board: Layout["board"]; crop?: Crop; clipId: string }) {
+  const zoom = useRef<SVGGElement>(null);
+  const start = zoomOutFrom(board, crop);
+  const startTransform = `translate(${start.translateX}px, ${start.translateY}px) scale(${start.scale})`;
+
+  useEffect(() => {
+    const element = zoom.current;
+    if (!crop || !element) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const soundTimer = setTimeout(revealSound, ZOOM_DELAY_MS);
+    const animation = element.animate([{ transform: startTransform }, { transform: "translate(0px, 0px) scale(1)" }], {
+      delay: ZOOM_DELAY_MS,
+      duration: reduceMotion ? 1 : ZOOM_MS,
+      easing: "cubic-bezier(0.45, 0, 0.2, 1)", // slow start, slow landing: a pull-back, not a snap
+      fill: "forwards",
+    });
+    return () => {
+      clearTimeout(soundTimer);
+      animation.cancel();
+    };
+  }, [crop, startTransform]);
+
+  return (
+    <g clipPath={`url(#${clipId})`} className="jigsaw-complete" data-reveal={crop ? "zoom" : "fade"}>
+      <g ref={zoom} style={{ transformBox: "view-box", transformOrigin: "0 0", transform: crop ? startTransform : undefined }}>
+        <image href={photoUrl} x={board.x} y={board.y} width={board.w} height={board.h} preserveAspectRatio="none" />
+      </g>
+    </g>
   );
 }

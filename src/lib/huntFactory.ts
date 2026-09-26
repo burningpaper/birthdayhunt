@@ -71,6 +71,8 @@ export function duplicateHunt(source: Hunt, now: Date = new Date()): Hunt {
       ...s,
       id: `s${shortId()}`,
       key: newStationKey(),
+      // Photos are cleared for re-shooting, and a jigsaw close-up belongs to its photo.
+      puzzle: s.puzzle.type === "jigsaw" ? { type: "jigsaw", pieces: s.puzzle.pieces, rotation: s.puzzle.rotation } : s.puzzle,
       clue: { showText: s.clue.showText, text: s.clue.text },
     })),
   };

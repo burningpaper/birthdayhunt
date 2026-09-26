@@ -22,6 +22,10 @@ export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 
 const mediaUrl = z.string().min(1).max(2048);
 
+export const CropSchema = z
+  .object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), size: z.number().min(0.2).max(1) })
+  .refine((c) => c.x + c.size <= 1.0001 && c.y + c.size <= 1.0001, "The close-up must stay inside the photo");
+
 export const LockQuestionSchema = z.object({
   questionText: z.string().max(200),
   questionAudioUrl: mediaUrl.optional(),
@@ -33,6 +37,12 @@ export const PuzzleConfigSchema = z.discriminatedUnion("type", [
     type: z.literal("jigsaw"),
     pieces: z.union([z.literal(6), z.literal(9), z.literal(12), z.literal(16)]),
     rotation: z.boolean(),
+    /**
+     * A mystery close-up of the clue photo to build instead of the whole
+     * thing (fractions of the photo; same shape as the photo). Finishing it
+     * zooms out to the full photo. None means the whole photo.
+     */
+    crop: CropSchema.optional(),
   }),
   z.object({
     type: z.literal("marbleRun"),
