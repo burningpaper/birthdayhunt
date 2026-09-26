@@ -77,6 +77,10 @@ Every sound is synthesized with the Web Audio API, so there are no audio files t
 
 Phosphor, **fill** weight only, at one size step per context. No emoji in the interface: the spec's 🔍, 📷 and 🔊 become Phosphor's magnifying glass, camera and speaker glyphs.
 
+## Marble Run: the one 3D scene
+
+Marble Run is the only puzzle drawn in real 3D (three.js via React Three Fiber, loaded only on its own stations). It extends the plastic idea rather than breaking it. A wooden pegboard stands on a wooden table, seen at a gentle three-quarter angle. The tracks are clear candy-plastic tubes that click together with cream collars. Fixed pieces are ice blue; the child's pieces use the plastic colours: straight tangerine, curve bubblegum, loop sunflower. The marble is a glossy tomato red with a pale swirl so you can see it roll. The goal is a green bucket with a sunflower flag. All the lighting is generated in code from glowing panels, and the textures are painted in code, so nothing is downloaded. Build squares are dashed cream outlines with a "+"; the one under a dragged piece glows sunflower and shows a see-through preview of the piece snapped in place.
+
 ## Setup side
 
 The parent tool shares the same fonts, radii and puzzle colours, but on a light, calm surface (`#F6F7FB`) with ink text. Plastic appears only where it earns its place: the primary action on each screen and the puzzle-colour chip on each station card. It is a light-only tool, a deliberate choice for something used a few times a year on an iPad or a Mac.

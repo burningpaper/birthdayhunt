@@ -61,9 +61,9 @@ Status: Complete. Five levels; at most 2 of every possible build win (Level 5: 2
 ## Stage M4: Play
 Goal: Drag from tray to a cell (piece lifted above the finger, cell glows with a snapped 3D preview), tap to turn, drag back to remove, GO, animated run, miss → fly off, bounce, "Whoops", new marble in the tube; solve → celebration; hint ghost; sounds.
 Success Criteria: E2E in WebKit solves levels 1, 3 and 5 by dragging; a miss keeps the pieces and restarts the marble at the tube; works on the real iPad.
-Status: Not Started
+Status: Complete in WebKit (6 marble E2E tests). Remaining: the parent's real-iPad test.
 
 ## Stage M5: Ship
 Goal: Free-build extra on the new engine, `offered: true`, docs (DESIGN.md, DEVELOPER_LOGS.md), full gate, deploy.
 Success Criteria: Unit + E2E suites pass; production deploy verified; parent re-tests on the iPad.
-Status: Not Started
+Status: In Progress. Old 2D code removed, `offered: true`, docs updated, 176 unit + 27 E2E pass. Deploying.

@@ -1,4 +1,4 @@
-import { PIECE_COLORS } from "./Scene";
+import { PIECE_COLORS } from "./colors";
 import { TUBE_RADIUS, piecePath, type PieceType } from "./track";
 
 /** A tray icon: the piece's tube seen flat on, in its plastic colour. */

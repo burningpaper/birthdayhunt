@@ -54,6 +54,35 @@ export function boardTexture(widthCells: number, heightCells: number): THREE.Can
   return texture;
 }
 
+/** The tabletop: darker planks running away from the player. */
+export function tableTexture(widthCells: number, depthCells: number): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(widthCells * 64);
+  canvas.height = Math.round(depthCells * 64);
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#9A5F33";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const plank = 96;
+  for (let x = 0; x < canvas.width; x += plank) {
+    ctx.fillStyle = (x / plank) % 2 ? "rgba(255,210,160,0.08)" : "rgba(60,25,5,0.1)";
+    ctx.fillRect(x, 0, plank, canvas.height);
+    ctx.fillStyle = "rgba(50,20,5,0.45)";
+    ctx.fillRect(x, 0, 3, canvas.height);
+    for (let i = 0; i < 6; i++) {
+      ctx.strokeStyle = "rgba(70,30,8,0.18)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const gx = x + 12 + i * 14;
+      for (let y = 0; y <= canvas.height; y += 12) ctx.lineTo(gx + Math.sin(y / 40 + i + x) * 3, y);
+      ctx.stroke();
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
 /** A dashed, glowing rounded square with a "+": build here. */
 export function buildCellTexture(): THREE.CanvasTexture {
   const size = 256;

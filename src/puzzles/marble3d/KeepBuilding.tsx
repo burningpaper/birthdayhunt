@@ -7,11 +7,11 @@ import { createPortal } from "react-dom";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { useHydrated } from "@/components/useHydrated";
 import type { PuzzleConfig } from "@/lib/schema";
-import { MarbleRun } from "./MarbleRun";
+import { MarbleRun3d } from "./MarbleRun3d";
 
 /**
  * The marble run's free-build extra (spec §6.2): after solving, keep
- * playing on the same course with two of every piece. The clue is already
+ * playing on a bare board with endless pieces. The clue is already
  * revealed, so this never holds up the hunt.
  */
 export function KeepBuilding({ config }: { config: PuzzleConfig }) {
@@ -43,7 +43,7 @@ export function KeepBuilding({ config }: { config: PuzzleConfig }) {
                     <X weight="bold" size={30} />
                   </PlasticButton>
                 </div>
-                <MarbleRun config={config} difficulty="medium" hintRequest={0} onSolved={noop} sandbox />
+                <MarbleRun3d config={config} difficulty="medium" hintRequest={0} onSolved={noop} sandbox />
               </motion.div>
             )}
           </AnimatePresence>,

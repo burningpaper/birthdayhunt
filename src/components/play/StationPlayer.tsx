@@ -13,7 +13,7 @@ import { ClueReveal } from "./ClueReveal";
 import { IntroScreen } from "./IntroScreen";
 import { InvalidScreen } from "./InvalidScreen";
 import { NotYetScreen } from "./NotYetScreen";
-import { KeepBuilding } from "@/puzzles/marble/KeepBuilding";
+import { KeepBuilding } from "@/puzzles/marble3d/KeepBuilding";
 import { PuzzleStage } from "./PuzzleStage";
 import { StationChip } from "./StationChip";
 

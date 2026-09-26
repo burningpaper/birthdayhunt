@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { LEVELS } from "../../src/puzzles/marble/levels";
-import { LIFT_PX } from "../../src/puzzles/marble/constants";
-import { sameOrientation } from "../../src/puzzles/marble/pieces";
+import { LIFT_PX } from "../../src/puzzles/marble3d/constants";
+import { LEVELS, type Placed } from "../../src/puzzles/marble3d/levels";
 import { findSolution, turnsFor, type Kind } from "../../src/puzzles/track/logic";
 
 /**
@@ -134,37 +133,39 @@ export async function solveGolf(page: Page) {
 }
 
 /** Build the level's intended run through the UI: drag each piece into its zone, turn it, press GO. */
+/** Drag a marble run piece from the tray into a square, then tap it round to the wanted turn. */
+export async function placeMarblePiece(root: Page | Locator, page: Page, want: Placed) {
+  const piece = root.locator(`button[data-piece][data-type="${want.type}"]`).first();
+  const cell = root.locator(`button.marble-cell[data-cell="${want.col},${want.row}"]`);
+  const from = (await piece.boundingBox())!;
+  const to = (await cell.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  // A dragged piece floats above the finger, so the finger goes below the square's centre.
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + LIFT_PX, { steps: 10 });
+  await page.mouse.up();
+  await expect(cell).toHaveAttribute("data-type", want.type);
+  for (let taps = 0; taps < 4 && Number(await cell.getAttribute("data-turns")) !== want.turns; taps++) await cell.click();
+  await expect(cell).toHaveAttribute("data-turns", String(want.turns));
+}
+
 export async function solveMarble(page: Page) {
-  const scene = page.locator("canvas.marble-run");
-  const level = LEVELS[Number(await scene.getAttribute("data-level")) - 1];
-  for (const want of level.solution) {
-    const piece = page.locator(`button[data-piece][data-type="${want.type}"]`).first();
-    const zone = page.locator(`button.marble-zone[data-zone="${want.zone}"]`);
-    const from = (await piece.boundingBox())!;
-    const to = (await zone.boundingBox())!;
-    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-    await page.mouse.down();
-    // A dragged piece floats above the finger, so the finger goes below the zone's centre.
-    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + LIFT_PX, { steps: 10 });
-    await page.mouse.up();
-    await expect(zone).toHaveAttribute("data-type", want.type);
-    for (let taps = 0; taps < 8 && !sameOrientation(want.type, Number(await zone.getAttribute("data-turns")), want.turns); taps++) {
-      await zone.click();
-    }
-  }
+  const run = page.locator("div.marble-run");
+  const level = LEVELS[Number(await run.getAttribute("data-level")) - 1];
+  for (const want of level.solution) await placeMarblePiece(page, page, want);
   await page.getByRole("button", { name: "GO: drop the marble" }).click();
 }
 
 /** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */
 export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
   // Puzzles fade in after "Tap to start": wait until one is actually on screen.
-  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, canvas.marble-run");
+  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, div.marble-run");
   await expect(anyPuzzle.first()).toBeVisible();
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
   if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
   if (await page.locator(".dial-window").first().isVisible()) return solveLock(page, lockAnswers);
   if (await page.locator(".track-tile").first().isVisible()) return solveTrack(page);
   if (await page.locator("canvas.golf-course").isVisible()) return solveGolf(page);
-  if (await page.locator("canvas.marble-run").isVisible()) return solveMarble(page);
+  if (await page.locator("div.marble-run").isVisible()) return solveMarble(page);
   throw new Error("No puzzle found on this station");
 }
