@@ -86,6 +86,66 @@ export function Piece({ piece, rows, fixed = false, ghost = false, pulse = false
   );
 }
 
+function starShape(outer: number, inner: number) {
+  const shape = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = Math.PI / 2 + (i * Math.PI) / 5;
+    if (i === 0) shape.moveTo(r * Math.cos(a), r * Math.sin(a));
+    else shape.lineTo(r * Math.cos(a), r * Math.sin(a));
+  }
+  shape.closePath();
+  return shape;
+}
+
+const POP_MS = 380;
+
+/**
+ * A gold star floating in front of its square, turning slowly. When the
+ * running marble rolls into the square it bursts (grows and fades), and it's
+ * back for the next go.
+ */
+function Star({ cell, rows, run }: { cell: CellRef; rows: number; run: PlayingRun | null }) {
+  const group = useRef<THREE.Group>(null);
+  const material = useRef<THREE.MeshPhysicalMaterial>(null);
+  const geometry = useMemo(
+    () => new THREE.ExtrudeGeometry(starShape(0.24, 0.1), { depth: 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.025, bevelSegments: 3 }).center(),
+    [],
+  );
+  const c = cellCentre(cell, rows);
+  const collectedAt = useMemo(() => {
+    const event = run?.events.find((e) => e.kind === "star" && e.cell?.col === cell.col && e.cell?.row === cell.row);
+    return run && event ? run.startedAt + event.tick * TICK * 1000 : null;
+  }, [run, cell]);
+
+  useFrame(({ clock }) => {
+    const g = group.current;
+    if (!g || !material.current) return;
+    const t = clock.elapsedTime;
+    g.rotation.y = Math.sin(t * 1.4 + c.x) * 0.5;
+    g.position.y = c.y + Math.sin(t * 2 + c.x * 1.7) * 0.03;
+    const since = collectedAt === null ? -1 : performance.now() - collectedAt;
+    if (since < 0) {
+      g.visible = true;
+      g.scale.setScalar(1);
+      material.current.opacity = 1;
+    } else {
+      const k = Math.min(since / POP_MS, 1);
+      g.visible = k < 1;
+      g.scale.setScalar(1 + k * 0.9);
+      material.current.opacity = 1 - k;
+    }
+  });
+
+  return (
+    <group ref={group} position={[c.x, c.y, TUBE_RADIUS + 0.12]}>
+      <mesh geometry={geometry} castShadow>
+        <meshPhysicalMaterial ref={material} color="#FFC21A" emissive="#FF9F0A" emissiveIntensity={0.35} roughness={0.2} metalness={0.3} clearcoat={1} transparent />
+      </mesh>
+    </group>
+  );
+}
+
 /** The table the board stands on, where a marble that flies off lands and bounces. */
 function Table({ level }: { level: Level }) {
   const width = level.cols + 8;
@@ -356,6 +416,9 @@ export function MarbleScene({ level, placed, hoverCell, preview, hint, run, spaw
       <Table level={level} />
       <Board level={level} />
       {hoverCell && <BuildCell cell={hoverCell} rows={level.rows} />}
+      {level.stars.map((cell) => (
+        <Star key={`s${cell.col},${cell.row}`} cell={cell} rows={level.rows} run={run} />
+      ))}
       {level.blocked.map((cell) => (
         <Block key={`b${cell.col},${cell.row}`} cell={cell} rows={level.rows} />
       ))}

@@ -9,6 +9,10 @@ import { MARBLE_RADIUS, cellCentre, placedPath, type CellRef, type PieceType, ty
  * Reach an opening with nothing that fits on the other side? It flies off
  * in a real arc and bounces on the table. The same build always does the
  * same thing, which is what lets the tests prove every level.
+ *
+ * Stars: the marble collects one by rolling into its cell. Landing in the
+ * bucket only counts once it has every star; otherwise it still drops in,
+ * but the run is a miss ("stars").
  */
 
 /** Gravity, in cells per second², slowed down from real life so a child can follow the marble. */
@@ -31,8 +35,8 @@ const BOUNCE = 0.45;
 export const TABLE_Y = -0.3;
 
 export type RunResult = "cup" | "miss";
-export type RunEvent = { tick: number; kind: "join" | "fly" | "bounce" | "cup" | "back" };
-export type Run = { frames: Vec3[]; result: RunResult; reason: "cup" | "flew" | "stuck"; events: RunEvent[] };
+export type RunEvent = { tick: number; kind: "join" | "fly" | "bounce" | "cup" | "back" | "star"; cell?: CellRef };
+export type Run = { frames: Vec3[]; result: RunResult; reason: "cup" | "flew" | "stuck" | "stars"; events: RunEvent[] };
 
 type Track = { type: PieceType; ends: [Side, Side]; points: Vec3[]; lengths: number[] };
 
@@ -99,6 +103,7 @@ export function simulate(level: Level, placed: Placed[]): Run {
   let way: 1 | -1 = -1; // the start tube runs bottom to top; the marble heads down
   let speed = 0;
   let still = 0;
+  const starsLeft = new Set(level.stars.map(key));
 
   for (let tick = 0; tick < MAX_TICKS; tick++) {
     const here = pointAt(t, s);
@@ -134,7 +139,7 @@ export function simulate(level: Level, placed: Placed[]): Run {
 
       if (inCup(level, next) && enter !== "B") {
         events.push({ tick, kind: "cup" });
-        return catchInBucket(level, exit.at, velocity, frames, events, tick);
+        return catchInBucket(level, exit.at, velocity, frames, events, tick, starsLeft.size === 0);
       }
       const nextTrack = tracks.get(key(next));
       if (!nextTrack || !nextTrack.ends.includes(enter)) {
@@ -142,6 +147,7 @@ export function simulate(level: Level, placed: Placed[]): Run {
         return flyOff(exit.at, velocity, frames, events, tick);
       }
       events.push({ tick, kind: "join" });
+      if (starsLeft.delete(key(next))) events.push({ tick, kind: "star", cell: next });
       cell = next;
       t = nextTrack;
       speed *= KEEP_THROUGH[t.type];
@@ -179,7 +185,7 @@ function flyOff(from: Vec3, velocity: Vec3, frames: Vec3[], events: RunEvent[], 
 }
 
 /** Into the bucket: a short arc, rattling off its sides, then settling on the bottom. */
-function catchInBucket(level: Level, from: Vec3, velocity: Vec3, frames: Vec3[], events: RunEvent[], tick: number): Run {
+function catchInBucket(level: Level, from: Vec3, velocity: Vec3, frames: Vec3[], events: RunEvent[], tick: number, allStars: boolean): Run {
   const c = cellCentre(level.cup, level.rows);
   const floor = c.y - 0.46 + MARBLE_RADIUS + 0.02;
   const wall = 0.26 - MARBLE_RADIUS;
@@ -205,5 +211,5 @@ function catchInBucket(level: Level, from: Vec3, velocity: Vec3, frames: Vec3[],
     settled = Math.abs(v.y) < 0.3 && p.y - floor < 0.01 ? settled + 1 : 0;
     frames.push({ ...p });
   }
-  return { frames, result: "cup", reason: "cup", events };
+  return allStars ? { frames, result: "cup", reason: "cup", events } : { frames, result: "miss", reason: "stars", events };
 }

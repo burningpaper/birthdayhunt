@@ -92,3 +92,30 @@ export function distinctPaths(routes: Placed[][]): number {
   const shape = (p: Placed) => `${p.col},${p.row}:${p.type === "loop" ? "straight/0" : `${p.type}/${p.turns}`}`;
   return new Set(routes.map((r) => r.map(shape).join(" "))).size;
 }
+
+/**
+ * The fewest cells any run could take from the tube to the bucket, if the
+ * tray were endless and stars didn't matter. Levels are checked against it:
+ * the stars must force a longer way round.
+ */
+export function shortestPathLength(level: Level): number {
+  const open = new Set(level.open.map(key));
+  const queue: [CellRef, Side, number][] = [[{ col: level.start, row: 0 }, "T", 1]];
+  const seen = new Set([`${level.start},0,T`]);
+  while (queue.length) {
+    const [cell, enter, length] = queue.shift()!;
+    for (const leave of ["L", "R", "T", "B"] as Side[]) {
+      if (leave === enter) continue;
+      const next = { col: cell.col + STEP[leave].col, row: cell.row + STEP[leave].row };
+      if (next.col === level.cup.col && next.row === level.cup.row) {
+        if (leave !== "T") return length;
+        continue;
+      }
+      const state = `${key(next)},${OPPOSITE[leave]}`;
+      if (!open.has(key(next)) || seen.has(state)) continue;
+      seen.add(state);
+      queue.push([next, OPPOSITE[leave], length + 1]);
+    }
+  }
+  return Infinity;
+}

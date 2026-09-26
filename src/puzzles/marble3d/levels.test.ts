@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { simulate } from "./engine";
 import { LEVELS } from "./levels";
-import { distinctPaths, hintPiece, winningRoutes } from "./routes";
+import { distinctPaths, hintPiece, shortestPathLength, winningRoutes } from "./routes";
 
 const cellKey = (c: { col: number; row: number }) => `${c.col},${c.row}`;
 
@@ -27,6 +27,17 @@ describe.each(LEVELS.map((level, i) => [i + 1, level] as const))("level %i", (nu
       expect(tray).toContain(p.type);
       tray.splice(tray.indexOf(p.type), 1);
     }
+  });
+
+  it("puts every star on a square the child can build on", () => {
+    const open = new Set(level.open.map(cellKey));
+    expect(level.stars.length).toBeGreaterThan(0);
+    expect(level.stars.every((c) => open.has(cellKey(c)))).toBe(true);
+  });
+
+  it("makes the stars matter: the shortest way to the bucket misses one", () => {
+    const shortestWin = Math.min(...winningRoutes(level).map((r) => r.length));
+    expect(shortestWin).toBeGreaterThan(shortestPathLength(level));
   });
 
   it("isn't solved by an empty board", () => {

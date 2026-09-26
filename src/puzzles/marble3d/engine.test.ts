@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { TABLE_Y, simulate } from "./engine";
 import { LEVELS, type Level, type Placed } from "./levels";
-import { MARBLE_RADIUS, cellCentre, portPoint } from "./track";
+import { MARBLE_RADIUS, cellCentre, portPoint, type CellRef } from "./track";
 
 /** A bare 4 × 3 board, marble dropping into column 0, bucket bottom right. */
-function board(fixed: Placed[], cup = { col: 3, row: 2 }): Level {
-  return { name: "test", cols: 4, rows: 3, start: 0, cup, fixed, blocked: [], open: [], tray: [], solution: [] };
+function board(fixed: Placed[], cup = { col: 3, row: 2 }, stars: CellRef[] = []): Level {
+  return { name: "test", cols: 4, rows: 3, start: 0, cup, fixed, blocked: [], stars, open: [], tray: [], solution: [] };
 }
 
 /** Down column 0, along the bottom row to the bucket. */
@@ -91,5 +91,21 @@ describe("marble run engine", () => {
     const [first, ...rest] = DOWN_AND_ALONG;
     expect(simulate(board(rest), [first]).result).toBe("cup");
     expect(simulate(board(rest), []).result).toBe("miss");
+  });
+
+  describe("stars", () => {
+    it("collects each star once, as the marble rolls into its cell, and then the bucket counts", () => {
+      const stars = [{ col: 0, row: 1 }, { col: 2, row: 2 }];
+      const run = simulate(board(DOWN_AND_ALONG, undefined, stars), []);
+      expect(run.result).toBe("cup");
+      expect(run.events.filter((e) => e.kind === "star").map((e) => e.cell)).toEqual(stars);
+    });
+
+    it("doesn't count the bucket if the run skipped a star: the marble drops in, but it's a miss", () => {
+      const run = simulate(board(DOWN_AND_ALONG, undefined, [{ col: 1, row: 1 }]), []); // nothing passes (1,1)
+      expect(run.result).toBe("miss");
+      expect(run.reason).toBe("stars");
+      expect(run.events.some((e) => e.kind === "cup")).toBe(true);
+    });
   });
 });

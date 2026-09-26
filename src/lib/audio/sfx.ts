@@ -108,3 +108,12 @@ export function reveal() {
     { freq: 2093, at: 1.35, length: 0.5, type: "sine", volume: 0.08 },
   ]);
 }
+
+/** Three quick bright notes: a marble run star collected. */
+export function twinkle() {
+  play([
+    { freq: 1319, at: 0, length: 0.09, type: "sine", volume: 0.14 },
+    { freq: 1760, at: 0.06, length: 0.09, type: "sine", volume: 0.12 },
+    { freq: 2637, at: 0.12, length: 0.16, type: "triangle", volume: 0.08 },
+  ]);
+}

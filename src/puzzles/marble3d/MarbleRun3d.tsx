@@ -1,10 +1,10 @@
 "use client";
 
-import { Play } from "@phosphor-icons/react";
+import { Play, Star } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
-import { boing, snap, tock } from "@/lib/audio/sfx";
+import { boing, snap, tock, twinkle } from "@/lib/audio/sfx";
 import type { PuzzleProps } from "../types";
 import { simulate, type RunEvent } from "./engine";
 import { LEVELS, level as buildLevel, type Level, type Placed } from "./levels";
@@ -31,7 +31,7 @@ const sameCell = (a: CellRef | null, b: CellRef | null) => !!a && !!b && a.col =
 
 /** Free build: a bare board, just the start and the bucket, every other cell open. */
 function freeBuild(base: Level): Level {
-  return buildLevel({ ...base, name: "Free build", fixed: [], blocked: [], tray: [], solution: [] });
+  return buildLevel({ ...base, name: "Free build", fixed: [], blocked: [], stars: [], tray: [], solution: [] });
 }
 
 /**
@@ -57,6 +57,7 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
   const [run, setRun] = useState<PlayingRun | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [spawnedAt, setSpawnedAt] = useState(0);
+  const [starsCollected, setStarsCollected] = useState(0);
   const editing = phase === "build";
 
   // The hint: a breathing ghost of one correct piece not yet in place, for a few seconds.
@@ -148,6 +149,10 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
   }
 
   const onEvent = useCallback((kind: RunEvent["kind"]) => {
+    if (kind === "star") {
+      twinkle();
+      setStarsCollected((n) => n + 1);
+    }
     if (kind === "fly") {
       boing();
       setMessage("Whoops! Try again.");
@@ -175,11 +180,16 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
     if (finished.result === "cup") setMessage("In the bucket!");
     else {
       if (finished.reason === "stuck") setMessage("Whoops! It got stuck.");
+      if (finished.reason === "stars") {
+        boing();
+        setMessage("So close! Collect every star first.");
+      }
       if (!sandbox) callbacks.current.onAttemptFailed?.();
     }
     // A fresh marble drops into the tube; every piece stays where it is.
     setTimeout(() => {
       setRun(null);
+      setStarsCollected(0);
       setMessage(null);
       setSpawnedAt(performance.now());
       setPhase("build");
@@ -235,6 +245,23 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
             );
           })}
 
+        {level.stars.length > 0 && (
+          <div
+            className="pointer-events-none absolute top-2 left-4 z-10 flex items-center gap-1 rounded-full bg-toybox/70 px-3 py-2"
+            role="status"
+            aria-label={`${starsCollected} of ${level.stars.length} stars collected`}
+            data-stars={starsCollected}
+          >
+            {level.stars.map((_, i) => (
+              <Star
+                key={i}
+                weight="fill"
+                size={30}
+                className={`transition-all duration-300 motion-reduce:transition-none ${i < starsCollected ? "scale-110 text-sunflower drop-shadow-[0_0_6px_rgb(255_194_26/0.8)]" : "text-cream/25"}`}
+              />
+            ))}
+          </div>
+        )}
         {message && (
           <p className="pointer-events-none absolute inset-x-0 top-2 z-10 text-center font-display text-4xl drop-shadow-[0_3px_0_rgb(8_14_36/0.6)]" role="status">
             {message}

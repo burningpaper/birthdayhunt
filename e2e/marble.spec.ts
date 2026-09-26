@@ -28,22 +28,52 @@ for (const level of [1, 3, 5]) {
   });
 }
 
+test("each star the marble rolls through lights up on the counter", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto(await marbleStation(page, 3));
+  await page.getByRole("button", { name: "Tap to start!" }).click();
+  await expect(page.getByRole("status", { name: "0 of 3 stars collected" })).toBeVisible();
+  await solveMarble(page);
+  await expect(page.getByRole("status", { name: "3 of 3 stars collected" })).toBeVisible({ timeout: 15_000 });
+});
+
 test("a miss flies off, then a new marble waits in the tube and the pieces stay put", async ({ page }) => {
   await page.goto(await marbleStation(page, 1));
   await page.getByRole("button", { name: "Tap to start!" }).click();
 
   // A curve under the tube that opens left and down, not up: the marble can't get in, and flies off.
   const curves = page.locator('button[data-piece][data-type="curve"]');
-  await expect(curves).toHaveAttribute("data-left", "5");
-  await placeMarblePiece(page, page, { col: 0, row: 0, type: "curve", turns: 0 });
-  await expect(curves).toHaveAttribute("data-left", "4"); // one fewer in the tray
+  await expect(curves).toHaveAttribute("data-left", "3");
+  await placeMarblePiece(page, page, { col: 2, row: 0, type: "curve", turns: 0 });
+  await expect(curves).toHaveAttribute("data-left", "2"); // one fewer in the tray
   await page.getByRole("button", { name: "GO: drop the marble" }).click();
 
   const run = page.locator("div.marble-run");
   await expect(run).toHaveAttribute("data-phase", "running");
   await expect(page.getByText("Whoops! Try again.")).toBeVisible({ timeout: 15_000 });
   await expect(run).toHaveAttribute("data-phase", "build", { timeout: 8_000 });
-  await expect(page.locator('button.marble-cell[data-cell="0,0"]')).toHaveAttribute("data-type", "curve");
+  await expect(page.locator('button.marble-cell[data-cell="2,0"]')).toHaveAttribute("data-type", "curve");
+});
+
+test("a run that lands in the bucket but skips a star doesn't count", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto(await marbleStation(page, 1));
+  await page.getByRole("button", { name: "Tap to start!" }).click();
+
+  // Level 1's star is left of the drop; go straight down and along instead, missing it.
+  const skipTheStar: Placed[] = [
+    { col: 2, row: 0, type: "straight", turns: 1 },
+    { col: 2, row: 1, type: "straight", turns: 1 },
+    { col: 2, row: 2, type: "curve", turns: 2 },
+    { col: 3, row: 2, type: "straight", turns: 0 },
+  ];
+  for (const want of skipTheStar) await placeMarblePiece(page, page, want);
+  await page.getByRole("button", { name: "GO: drop the marble" }).click();
+
+  await expect(page.getByText("So close! Collect every star first.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("div.marble-run")).toHaveAttribute("data-phase", "build", { timeout: 8_000 });
+  await expect(page.getByText("You did it!")).toHaveCount(0);
+  await expect(page.locator("[data-stars]")).toHaveAttribute("data-stars", "0"); // the counter resets for the next go
 });
 
 test("after solving, Keep building! opens a free build on a bare board with endless pieces", async ({ page }) => {
@@ -58,14 +88,12 @@ test("after solving, Keep building! opens a free build on a bare board with endl
   await expect(sandbox).toBeVisible();
   await expect(sandbox.locator("button[data-piece]")).toHaveCount(3);
 
-  // A whole run from scratch: down the first column, along the bottom, into the bucket.
+  // A whole run from scratch on level 1's bare board: down from the tube, along the bottom, into the bucket.
   const route: Placed[] = [
-    { col: 0, row: 0, type: "straight", turns: 1 },
-    { col: 0, row: 1, type: "straight", turns: 1 },
-    { col: 0, row: 2, type: "curve", turns: 2 },
-    { col: 1, row: 2, type: "straight", turns: 0 },
-    { col: 2, row: 2, type: "loop", turns: 0 },
-    { col: 3, row: 2, type: "straight", turns: 0 },
+    { col: 2, row: 0, type: "straight", turns: 1 },
+    { col: 2, row: 1, type: "straight", turns: 1 },
+    { col: 2, row: 2, type: "curve", turns: 2 },
+    { col: 3, row: 2, type: "loop", turns: 0 },
   ];
   for (const want of route) await placeMarblePiece(sandbox, page, want);
   await expect(sandbox.locator("button[data-piece]")).toHaveCount(3); // the tray never runs out

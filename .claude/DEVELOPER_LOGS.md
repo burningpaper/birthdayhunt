@@ -135,3 +135,20 @@ The parent wanted a start screen before the first scan: "just a big red button" 
 The welcome is the 17th voice line ("Start screen"), uploaded in the same panel and marked as free-form, since the parent says whatever they like. Pressing the button plays it, then the scanner opens. A second press skips the rest, and with no message recorded the button goes straight to the scanner. `playRecordingToEnd()` resolves on end, pause, error or a refused play, so the scanner always opens whatever happens to the audio.
 
 Two things surfaced in testing. The button's gentle "breathing" first scaled the button itself, and Playwright, like a strict referee, won't click an element that never stops moving. The breath moved to a glowing halo behind it, which also looks softer. And a full run exposed a 1-in-18 Marble Run flake with a real cause behind it. The drop square was taken from the last *rendered* drag position, and React may not have rendered the final move before the finger lifts, so a quick flick could drop a piece one square back. The drop now uses the lift-off event's own coordinates. It passed 30 of 30 repeat runs, and a child's fast flick won't misfire either. The jigsaw and golf keep their drags in refs, so they never had the problem.
+
+## 2026-09-26 — Marble Run gets stars (and a way to measure "too easy")
+
+"Still too easy. It took me 30 seconds, and Ren is smart." The route-finding levels had looked hard on paper. The first move this time was to measure instead of guess. A scratch counter found every path from the tube to the bucket as if pieces were endless. On Levels 4 and 5 there were only **8**: the blocks the generator had added to force a single answer had walled the board into a corridor, so the board itself drew the route.
+
+The opposite failed too. On an open board, a mix of straights and curves fits dozens of routes, so demanding one answer is impossible and allowing many makes it easy. With only two piece types there was no middle ground, which is why the parent's suggestion of new mechanics was right. Of the four offered (stars, a jump ramp, a crossover, a lift and booster), they chose **stars**.
+
+A star sits on a square, and the marble must roll through every one before the bucket counts. In the engine it's a set of cells and a `star` event on entry; landing with stars left over still drops the marble in the bucket but reports `reason: "stars"`, so the child sees exactly what happened ("So close! Collect every star first."). In 3D each star is an extruded gold shape floating in front of its square that bursts as the marble arrives, timed from the pre-computed run's events, and a counter fills top-left.
+
+The generator (`e2e-scratch/marble/gen2.test.ts`) now has an explicit idea of "hard":
+- an open board (few blocks, and only on squares other winners use);
+- hundreds or thousands of tempting paths;
+- at most two that actually fit the tray and collect every star;
+- the shortest winner well longer than the shortest way to the bucket, so the obvious route always misses a star;
+- snaking routes, with at least two changes of direction.
+
+Its old random number generator also turned out to cycle, printing the same level three times, so it was swapped for mulberry32. The chosen levels run from a 6-piece single-star warm-up to Level 3's 11 pieces with three stars on a block-free board (4,284 tempting paths, one winner), up to Level 5's 17 pieces with four stars and a loop. `levels.test.ts` holds each to it: stars on buildable squares, the shortest way to the bucket misses one, and only a couple of winning paths.
