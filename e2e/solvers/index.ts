@@ -1,4 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { LEVELS } from "../../src/puzzles/marble/levels";
+import { sameOrientation } from "../../src/puzzles/marble/pieces";
 import { findSolution, turnsFor, type Kind } from "../../src/puzzles/track/logic";
 
 /**
@@ -130,19 +132,37 @@ export async function solveGolf(page: Page) {
   }
 }
 
-export async function solvePlaceholder(page: Page) {
-  await page.getByRole("button", { name: "Tap to solve" }).click();
+/** Build the level's intended run through the UI: drag each piece into its zone, turn it, press GO. */
+export async function solveMarble(page: Page) {
+  const scene = page.locator("canvas.marble-run");
+  const level = LEVELS[Number(await scene.getAttribute("data-level")) - 1];
+  for (const want of level.solution) {
+    const piece = page.locator(`button[data-piece][data-type="${want.type}"]`).first();
+    const zone = page.locator(`button.marble-zone[data-zone="${want.zone}"]`);
+    const from = (await piece.boundingBox())!;
+    const to = (await zone.boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
+    await page.mouse.up();
+    await expect(zone).toHaveAttribute("data-type", want.type);
+    for (let taps = 0; taps < 8 && !sameOrientation(want.type, Number(await zone.getAttribute("data-turns")), want.turns); taps++) {
+      await zone.click();
+    }
+  }
+  await page.getByRole("button", { name: "GO: drop the marble" }).click();
 }
 
 /** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */
 export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
   // Puzzles fade in after "Tap to start": wait until one is actually on screen.
-  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, button:has-text('Tap to solve')");
+  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, canvas.marble-run");
   await expect(anyPuzzle.first()).toBeVisible();
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
   if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
   if (await page.locator(".dial-window").first().isVisible()) return solveLock(page, lockAnswers);
   if (await page.locator(".track-tile").first().isVisible()) return solveTrack(page);
   if (await page.locator("canvas.golf-course").isVisible()) return solveGolf(page);
-  return solvePlaceholder(page);
+  if (await page.locator("canvas.marble-run").isVisible()) return solveMarble(page);
+  throw new Error("No puzzle found on this station");
 }

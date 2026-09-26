@@ -3,15 +3,15 @@ import type { PuzzleType } from "@/lib/schema";
 import { FlickGolf } from "./golf/FlickGolf";
 import { Jigsaw } from "./jigsaw/Jigsaw";
 import { CountingLock } from "./lock/CountingLock";
+import { MarbleRun } from "./marble/MarbleRun";
 import { MemoryMatch } from "./memory/MemoryMatch";
 import { TrainTrack } from "./track/TrainTrack";
-import { Placeholder } from "./Placeholder";
 import type { PuzzleProps } from "./types";
 
-/** Puzzle type → component. Real puzzles replace the placeholder one at a time. */
+/** Puzzle type → component. */
 export const PUZZLES: Record<PuzzleType, ComponentType<PuzzleProps>> = {
   jigsaw: Jigsaw,
-  marbleRun: Placeholder,
+  marbleRun: MarbleRun,
   trainTrack: TrainTrack,
   memoryMatch: MemoryMatch,
   flickGolf: FlickGolf,

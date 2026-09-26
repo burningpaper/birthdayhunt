@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element -- clue photos come from Blob or local uploads at runtime */
 import { MagnifyingGlass, TreasureChest } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import { SpeakerButton } from "@/components/plastic/SpeakerButton";
 import { ScanButton } from "@/components/scan/ScanButton";
 import { playRecording, speak } from "@/lib/audio/voice";
@@ -11,6 +11,8 @@ import type { ClueView } from "@/lib/playState";
 
 type Props = {
   clue: ClueView;
+  /** Something extra beside the replay button (the marble run's "Keep building!"). */
+  extra?: ReactNode;
   /** Play the voice clue as soon as the screen appears. */
   autoPlay?: boolean;
 };
@@ -20,7 +22,7 @@ type Props = {
  * voice, and a nudge to go looking. There's no "next" button because the
  * next step happens with feet, not fingers.
  */
-export function ClueReveal({ clue, autoPlay = true }: Props) {
+export function ClueReveal({ clue, autoPlay = true, extra }: Props) {
   const reduceMotion = useReducedMotion();
   const hasPhoto = Boolean(clue.photoUrl);
   const findLine = clue.isFinal ? "Go find the treasure!" : "Go find it!";
@@ -70,6 +72,7 @@ export function ClueReveal({ clue, autoPlay = true }: Props) {
           </div>
         </div>
         <div className="flex items-end gap-4">
+          {extra}
           {!clue.isFinal && <ScanButton label="Scan the next code" size="md" color="cobalt" />}
           <SpeakerButton size="xl" color="sunflower" onSpeak={hear} label="Hear the clue again" />
         </div>

@@ -17,12 +17,8 @@ const PRESETS = {
   countingLock: { easy: { digits: 2 }, medium: { digits: 3 }, hard: { digits: 3 } },
 } as const;
 
-/**
- * The spec's order is Jigsaw, Marble Run, Train Track, Memory Match, Flick
- * Golf, Counting Lock. Until Marble Run is built, new hunts use that order
- * without it, with a second Train Track to make six stations.
- */
-export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = ["jigsaw", "trainTrack", "memoryMatch", "flickGolf", "countingLock", "trainTrack"];
+/** The spec's default order for a new hunt (§4). */
+export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = ["jigsaw", "marbleRun", "trainTrack", "memoryMatch", "flickGolf", "countingLock"];
 
 function blankQuestion(): LockQuestion {
   return { questionText: "", answer: 0 };

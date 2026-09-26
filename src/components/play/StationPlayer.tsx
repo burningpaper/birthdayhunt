@@ -13,6 +13,7 @@ import { ClueReveal } from "./ClueReveal";
 import { IntroScreen } from "./IntroScreen";
 import { InvalidScreen } from "./InvalidScreen";
 import { NotYetScreen } from "./NotYetScreen";
+import { KeepBuilding } from "@/puzzles/marble/KeepBuilding";
 import { PuzzleStage } from "./PuzzleStage";
 import { StationChip } from "./StationChip";
 
@@ -129,7 +130,7 @@ function PlayableStation({ response, huntId, stationKey, preview }: { response: 
           )}
 
           {phase.name === "celebrate" && <CelebrationScreen puzzleType={puzzle.type} isFinal={phase.clue.isFinal} stars={stars} />}
-          {phase.name === "clue" && <ClueReveal clue={phase.clue} />}
+          {phase.name === "clue" && <ClueReveal clue={phase.clue} extra={puzzle.type === "marbleRun" ? <KeepBuilding config={puzzle} /> : undefined} />}
         </motion.div>
       </AnimatePresence>
     </>

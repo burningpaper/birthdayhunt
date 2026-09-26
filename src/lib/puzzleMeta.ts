@@ -17,7 +17,7 @@ export type PuzzleMeta = {
 /** Each puzzle owns one plastic colour, so a station has an identity on sight. */
 export const PUZZLE_META: Record<PuzzleType, PuzzleMeta> = {
   jigsaw: { name: "Jigsaw", color: "tomato", hex: "#F0453A", instruction: "Drag the pieces to build the picture!", ready: true },
-  marbleRun: { name: "Marble Run", color: "cobalt", hex: "#2F6BEA", instruction: "Build a path so the marble lands in the cup!", ready: false },
+  marbleRun: { name: "Marble Run", color: "cobalt", hex: "#2F6BEA", instruction: "Build a path so the marble lands in the cup!", ready: true },
   trainTrack: { name: "Train Track", color: "grass", hex: "#22A94F", instruction: "Tap the tracks to turn them. Get the train home!", ready: true },
   memoryMatch: { name: "Memory Match", color: "sunflower", hex: "#FFC21A", instruction: "Flip two cards. Find all the pairs!", ready: true },
   flickGolf: { name: "Flick Golf", color: "tangerine", hex: "#FF8A1F", instruction: "Pull back and let go to hit the ball in the hole!", ready: true },

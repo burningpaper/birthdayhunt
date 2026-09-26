@@ -29,6 +29,6 @@ Success Criteria: A full run with no adult help needed for the app itself; all i
 Status: Not Started
 
 ## Stretch: Flick Golf, then Marble Run
-Goal: Matter.js puzzles; Marble Run levels as JSON.
+Goal: Matter.js puzzles; Marble Run levels as data.
 Success Criteria: Each solvable in under 5 minutes at Medium; only started after Stage 5 passes.
-Status: Not Started
+Status: Complete and deployed. Flick Golf (5 holes, each proven sinkable) and Marble Run (5 levels, each proven solvable, plus the free-build extra). Every puzzle in the spec is built.
