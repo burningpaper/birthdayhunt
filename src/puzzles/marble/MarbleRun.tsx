@@ -6,6 +6,7 @@ import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { boing, snap, tock } from "@/lib/audio/sfx";
 import type { PuzzleProps } from "../types";
 import { useElementSize } from "../useElementSize";
+import { LIFT_PX } from "./constants";
 import { LEVELS, WORLD, ZONE_SIZE, type Placement } from "./levels";
 import { PieceIcon } from "./PieceIcon";
 import { PIECE_TYPES, sameOrientation, type PieceType, type Point } from "./pieces";
@@ -16,6 +17,7 @@ const TRAY_HEIGHT = 120;
 const TAP_SLOP = 8;
 const MISS_RESET_MS = 2000;
 const HINT_MS = 4000;
+
 
 type TrayPiece = { id: number; type: PieceType };
 /** Where a piece is: in the tray, or in a zone with a rotation. */
@@ -69,9 +71,13 @@ export function MarbleRun({ config, onSolved, onAttemptFailed, onProgress, hintR
 
   // Drawing (and running) loop.
   const frameState = useRef({ placed, ghost, hoverZone: null as number | null });
-  const hoverZone = drag ? zoneAt(drag.at) : null;
+  const showDrag = drag !== null && (drag.from === "tray" || drag.moved);
+  const lifted = drag ? { x: drag.at.x, y: drag.at.y - LIFT_PX } : null;
+  const hoverZone = showDrag && lifted ? zoneAt(lifted) : null;
+  // A piece picked up off the board isn't drawn in its old spot while it moves.
+  const drawnPlaced = drag?.moved && drag.from !== "tray" ? placed.filter((p) => p.zone !== drag.from) : placed;
   useEffect(() => {
-    frameState.current = { placed, ghost, hoverZone };
+    frameState.current = { placed: drawnPlaced, ghost, hoverZone };
   });
   const callbacks = useRef({ onSolved, onAttemptFailed });
   useEffect(() => {
@@ -181,7 +187,7 @@ export function MarbleRun({ config, onSolved, onAttemptFailed, onProgress, hintR
       return;
     }
 
-    const zone = zoneAt(d.at);
+    const zone = zoneAt({ x: d.at.x, y: d.at.y - LIFT_PX });
     setBuilt((current) => {
       const without = current.filter((p) => p.id !== d.id);
       if (zone === null) return without; // dropped outside a zone: back to the tray
@@ -201,7 +207,10 @@ export function MarbleRun({ config, onSolved, onAttemptFailed, onProgress, hintR
     setPhase("running");
   }
 
-  const inTray = tray.filter((t) => !built.some((b) => b.id === t.id) && drag?.id !== t.id);
+  // The piece being dragged stays in the tray as a faded gap rather than
+  // disappearing: iPad Safari stops a touch's events if the element it began
+  // on is removed from the page mid-touch.
+  const inTray = tray.filter((t) => !built.some((b) => b.id === t.id));
 
   return (
     <div ref={ref} className="relative h-full w-full touch-none select-none" onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => setDrag(null)}>
@@ -239,13 +248,14 @@ export function MarbleRun({ config, onSolved, onAttemptFailed, onProgress, hintR
           })}
 
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 px-6" style={{ height: TRAY_HEIGHT }}>
-            <div className="flex flex-1 items-center gap-3 overflow-x-auto rounded-[var(--radius-panel)] bg-toybox-glow/60 px-4 py-2" aria-label="Pieces">
+            {/* Not a scroll area: a finger drag starting here must never become a scroll. */}
+            <div className="flex flex-1 touch-none flex-wrap items-center gap-3 rounded-[var(--radius-panel)] bg-toybox-glow/60 px-4 py-2" aria-label="Pieces">
               {inTray.length === 0 && <span className="px-2 text-lg font-semibold text-cream/60">All your pieces are on the run!</span>}
               {inTray.map((piece) => (
                 <button
                   key={piece.id}
                   type="button"
-                  className="plastic plastic-cream is-tile is-pressable grid size-20 shrink-0 place-items-center"
+                  className={`plastic plastic-cream is-tile is-pressable grid size-20 shrink-0 touch-none place-items-center transition-opacity ${drag?.id === piece.id ? "opacity-25" : ""}`}
                   aria-label={`${piece.type} piece`}
                   data-piece={piece.id}
                   data-type={piece.type}
@@ -262,9 +272,13 @@ export function MarbleRun({ config, onSolved, onAttemptFailed, onProgress, hintR
             </PlasticButton>
           </div>
 
-          {drag?.moved && (
-            <div className="pointer-events-none absolute z-20" style={{ left: drag.at.x - 100 * scale, top: drag.at.y - 100 * scale }}>
-              <PieceIcon type={drag.type} turns={drag.from === "tray" ? 0 : drag.turns} size={200 * scale} />
+          {showDrag && lifted && (
+            <div
+              className="marble-drag pointer-events-none absolute z-20"
+              style={{ left: lifted.x - 100 * scale, top: lifted.y - 100 * scale }}
+              data-dragging={drag!.type}
+            >
+              <PieceIcon type={drag!.type} turns={drag!.from === "tray" ? 0 : drag!.turns} size={200 * scale} />
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { LEVELS } from "../../src/puzzles/marble/levels";
+import { LIFT_PX } from "../../src/puzzles/marble/constants";
 import { sameOrientation } from "../../src/puzzles/marble/pieces";
 import { findSolution, turnsFor, type Kind } from "../../src/puzzles/track/logic";
 
@@ -143,7 +144,8 @@ export async function solveMarble(page: Page) {
     const to = (await zone.boundingBox())!;
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
     await page.mouse.down();
-    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
+    // A dragged piece floats above the finger, so the finger goes below the zone's centre.
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + LIFT_PX, { steps: 10 });
     await page.mouse.up();
     await expect(zone).toHaveAttribute("data-type", want.type);
     for (let taps = 0; taps < 8 && !sameOrientation(want.type, Number(await zone.getAttribute("data-turns")), want.turns); taps++) {

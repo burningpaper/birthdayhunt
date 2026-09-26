@@ -404,3 +404,11 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* ---------- Marble Run ---------- */
+
+/* A piece in your hand: a touch bigger, with a shadow, like lifting it off the board. */
+.marble-drag {
+  scale: 1.12;
+  filter: drop-shadow(0 12px 10px rgb(8 14 36 / 0.55));
+}

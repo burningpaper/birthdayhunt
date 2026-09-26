@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { LIFT_PX } from "../src/puzzles/marble/constants";
 import { solveMarble } from "./solvers";
 
 /** Marble Run, played through the real drag, tap and GO controls. */
@@ -37,7 +38,7 @@ test("a miss rolls away, then the pieces stay put for another go", async ({ page
   const to = (await zone.boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + LIFT_PX, { steps: 10 });
   await page.mouse.up();
   await zone.click(); // turn it 45°: now it points the marble the wrong way
   await zone.click();
@@ -68,4 +69,28 @@ test("after solving, Keep building! opens a free build with every piece", async 
   await sandbox.getByRole("button", { name: "Back to the clue" }).click();
   await expect(sandbox).toHaveCount(0);
   await expect(page.getByText("Go find it!")).toBeVisible();
+});
+
+test("touching a tray piece lifts it above the finger straight away, and its tray spot stays", async ({ page }) => {
+  await page.goto(await marbleStation(page, 1));
+  await page.getByRole("button", { name: "Tap to start!" }).click();
+
+  const piece = page.locator('button[data-piece][data-type="ramp"]');
+  const box = (await piece.boundingBox())!;
+  const finger = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  await page.mouse.move(finger.x, finger.y);
+  await page.mouse.down();
+
+  // Visible the moment it's touched, before any movement, and above the fingertip.
+  const held = page.locator('[data-dragging="ramp"]');
+  await expect(held).toBeVisible();
+  const heldBox = (await held.boundingBox())!;
+  expect(heldBox.y + heldBox.height / 2).toBeLessThan(finger.y - LIFT_PX / 2);
+  // The touched button is still in the page (iPad Safari drops a touch whose element vanishes).
+  await expect(piece).toBeAttached();
+
+  await page.mouse.move(finger.x - 200, finger.y - 150, { steps: 5 });
+  await expect(held).toBeVisible();
+  await page.mouse.up();
+  await expect(held).toHaveCount(0);
 });
