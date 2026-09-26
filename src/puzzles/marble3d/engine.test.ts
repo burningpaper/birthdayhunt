@@ -5,7 +5,7 @@ import { MARBLE_RADIUS, cellCentre, portPoint } from "./track";
 
 /** A bare 4 × 3 board, marble dropping into column 0, bucket bottom right. */
 function board(fixed: Placed[], cup = { col: 3, row: 2 }): Level {
-  return { name: "test", cols: 4, rows: 3, start: 0, cup, fixed, open: [], tray: [], solution: [] };
+  return { name: "test", cols: 4, rows: 3, start: 0, cup, fixed, blocked: [], open: [], tray: [], solution: [] };
 }
 
 /** Down column 0, along the bottom row to the bucket. */

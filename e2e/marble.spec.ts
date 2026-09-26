@@ -32,15 +32,18 @@ test("a miss flies off, then a new marble waits in the tube and the pieces stay 
   await page.goto(await marbleStation(page, 1));
   await page.getByRole("button", { name: "Tap to start!" }).click();
 
-  // Level 1's gap wants a straight; a curve there sends the marble flying.
-  await placeMarblePiece(page, page, { col: 2, row: 0, type: "curve", turns: 0 });
+  // A curve under the tube that opens left and down, not up: the marble can't get in, and flies off.
+  const curves = page.locator('button[data-piece][data-type="curve"]');
+  await expect(curves).toHaveAttribute("data-left", "5");
+  await placeMarblePiece(page, page, { col: 0, row: 0, type: "curve", turns: 0 });
+  await expect(curves).toHaveAttribute("data-left", "4"); // one fewer in the tray
   await page.getByRole("button", { name: "GO: drop the marble" }).click();
 
   const run = page.locator("div.marble-run");
   await expect(run).toHaveAttribute("data-phase", "running");
   await expect(page.getByText("Whoops! Try again.")).toBeVisible({ timeout: 15_000 });
   await expect(run).toHaveAttribute("data-phase", "build", { timeout: 8_000 });
-  await expect(page.locator('button.marble-cell[data-cell="2,0"]')).toHaveAttribute("data-type", "curve");
+  await expect(page.locator('button.marble-cell[data-cell="0,0"]')).toHaveAttribute("data-type", "curve");
 });
 
 test("after solving, Keep building! opens a free build on a bare board with endless pieces", async ({ page }) => {

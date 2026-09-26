@@ -7,9 +7,10 @@ import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { boing, snap, tock } from "@/lib/audio/sfx";
 import type { PuzzleProps } from "../types";
 import { simulate, type RunEvent } from "./engine";
-import { LEVELS, type Level, type Placed } from "./levels";
+import { LEVELS, level as buildLevel, type Level, type Placed } from "./levels";
 import { LIFT_PX } from "./constants";
 import { PieceIcon3d } from "./PieceIcon3d";
+import { hintPiece, winningRoutes } from "./routes";
 import type { PlayingRun, SceneView } from "./Scene";
 import { PIECE_TYPES, normalTurns, type CellRef, type PieceType } from "./track";
 
@@ -29,26 +30,24 @@ type Phase = "build" | "running" | "solved";
 const sameCell = (a: CellRef | null, b: CellRef | null) => !!a && !!b && a.col === b.col && a.row === b.row;
 
 /** Free build: a bare board, just the start and the bucket, every other cell open. */
-function freeBuild(level: Level): Level {
-  const open: CellRef[] = [];
-  for (let row = 0; row < level.rows; row++) {
-    for (let col = 0; col < level.cols; col++) if (!(col === level.cup.col && row === level.cup.row)) open.push({ col, row });
-  }
-  return { ...level, name: "Free build", fixed: [], open, tray: [], solution: [] };
+function freeBuild(base: Level): Level {
+  return buildLevel({ ...base, name: "Free build", fixed: [], blocked: [], tray: [], solution: [] });
 }
 
 /**
- * Marble Run (spec §6.2), in 3D. Drag pieces from the tray into the dashed
- * squares, tap a placed piece to turn it, then press GO. The marble rolls
+ * Marble Run (spec §6.2), in 3D. Plan a route from the tube to the bucket:
+ * drag pieces from the tray onto any free square of the board, tap a
+ * placed piece to turn it, then press GO. The marble rolls
  * the run you built; a miss flies off, bounces away and a new marble drops
  * into the tube, with every piece left where it was.
  */
 export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hintRequest, sandbox = false }: PuzzleProps & { sandbox?: boolean }) {
   const levelNumber = config.type === "marbleRun" ? config.level : 1;
   const level = useMemo(() => (sandbox ? freeBuild(LEVELS[levelNumber - 1]) : LEVELS[levelNumber - 1]), [levelNumber, sandbox]);
-  // Free build has endless pieces: the tray is one of each, and each drag takes a fresh copy.
-  const tray = useMemo(() => (sandbox ? PIECE_TYPES : level.tray).map((type, id) => ({ id, type })), [level, sandbox]);
-  const nextId = useRef(1000);
+  // The tray is one button per piece type, with how many are left. Free build never runs out.
+  const trayTypes = useMemo(() => PIECE_TYPES.filter((t) => sandbox || level.tray.includes(t)), [level, sandbox]);
+  const routes = useMemo(() => (sandbox ? [] : winningRoutes(level)), [level, sandbox]);
+  const nextId = useRef(1);
 
   const box = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<SceneView | null>(null);
@@ -65,8 +64,7 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
   const [hint, setHint] = useState<Placed | null>(null);
   if (hintRequest !== seenHint) {
     setSeenHint(hintRequest);
-    const missing = level.solution.find((s) => !built.some((b) => sameCell(b, s) && b.type === s.type && normalTurns(b.type, b.turns) === normalTurns(s.type, s.turns)));
-    setHint(missing ?? null);
+    setHint(hintPiece(routes, built));
   }
   useEffect(() => {
     if (!hint) return;
@@ -126,7 +124,7 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
     }
 
     const cell = openCellAt(d.at.x, d.at.y - LIFT_PX);
-    const id = d.from === "tray" && sandbox ? nextId.current++ : d.id;
+    const id = d.id;
     setBuilt((current) => {
       const without = current.filter((p) => p.id !== d.id);
       if (!cell) return without; // dropped off the board: back to the tray
@@ -185,10 +183,9 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
     }, RESET_MS);
   }, [sandbox]);
 
-  // In free build the tray never empties; in a level, a placed piece leaves it.
-  // The piece being dragged keeps its tray spot (faded) rather than vanishing:
-  // iPad Safari ends a touch whose element is removed mid-touch.
-  const inTray = sandbox ? tray : tray.filter((t) => !built.some((b) => b.id === t.id));
+  // How many of a type are still in the tray. A type that runs out stays (faded) rather than
+  // vanishing: iPad Safari ends a touch whose element is removed mid-touch.
+  const left = (type: PieceType) => (sandbox ? Infinity : level.tray.filter((t) => t === type).length - built.filter((b) => b.type === type).length);
 
   return (
     <div
@@ -204,7 +201,6 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
         <MarbleScene
           level={level}
           placed={shown}
-          marked={sandbox ? [] : level.open}
           hoverCell={hoverCell}
           preview={preview}
           hint={hint}
@@ -246,21 +242,29 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
       <div className="flex shrink-0 items-center justify-between gap-4 px-6" style={{ height: TRAY_HEIGHT }}>
         {/* Not a scroll area: a finger drag starting here must never become a scroll. */}
         <div className="flex flex-1 touch-none flex-wrap items-center gap-3 rounded-[var(--radius-panel)] bg-toybox-glow/60 px-4 py-2" aria-label="Pieces">
-          {inTray.length === 0 && <span className="px-2 text-lg font-semibold text-cream/60">All your pieces are on the run!</span>}
-          {inTray.map((piece) => (
-            <button
-              key={piece.id}
-              type="button"
-              className={`plastic plastic-cream is-tile is-pressable grid size-20 shrink-0 touch-none place-items-center transition-opacity ${drag?.id === piece.id ? "opacity-25" : ""}`}
-              aria-label={`${piece.type} piece`}
-              data-piece={piece.id}
-              data-type={piece.type}
-              disabled={!editing}
-              onPointerDown={(e) => startDrag(e, { ...piece, turns: 0 }, "tray")}
-            >
-              <PieceIcon3d type={piece.type} size={64} />
-            </button>
-          ))}
+          {trayTypes.map((type) => {
+            const n = left(type);
+            return (
+              <button
+                key={type}
+                type="button"
+                className={`plastic plastic-cream is-tile is-pressable relative grid size-20 shrink-0 touch-none place-items-center transition-opacity ${n === 0 ? "opacity-40" : ""}`}
+                aria-label={sandbox ? `${type} piece` : `${type} piece, ${n} left`}
+                data-piece={type}
+                data-type={type}
+                data-left={sandbox ? "" : n}
+                disabled={!editing || n === 0}
+                onPointerDown={(e) => startDrag(e, { id: nextId.current++, type, turns: 0 }, "tray")}
+              >
+                <PieceIcon3d type={type} size={64} />
+                {!sandbox && (
+                  <span className="absolute -top-2 -right-2 grid min-w-8 place-items-center rounded-full bg-cobalt px-1.5 py-0.5 font-display text-lg leading-none text-cream shadow-[0_2px_0_rgb(8_14_36/0.5)]">
+                    ×{n}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
         <PlasticButton size="lg" color="grass" onClick={go} disabled={!editing} aria-label="GO: drop the marble">
           <Play weight="fill" size={36} />

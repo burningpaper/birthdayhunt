@@ -116,14 +116,36 @@ function Board({ level }: { level: Level }) {
   );
 }
 
-function BuildCell({ cell, rows, glow, filled }: { cell: CellRef; rows: number; glow: boolean; filled: boolean }) {
+/** The square a dragged piece would land in: a glowing dashed outline on the board. */
+function BuildCell({ cell, rows }: { cell: CellRef; rows: number }) {
   const texture = useMemo(() => buildCellTexture(), []);
   const c = cellCentre(cell, rows);
   return (
     <mesh position={[c.x, c.y, BOARD_Z + 0.005]}>
       <planeGeometry args={[0.94, 0.94]} />
-      <meshBasicMaterial map={texture} color={glow ? "#FFD34D" : "#FFFFFF"} transparent opacity={glow ? 1 : filled ? 0.3 : 0.85} toneMapped={false} />
+      <meshBasicMaterial map={texture} color="#FFD34D" transparent toneMapped={false} />
     </mesh>
+  );
+}
+
+/** A chunky plastic block screwed to the board: the run has to go round it. */
+function Block({ cell, rows }: { cell: CellRef; rows: number }) {
+  const c = cellCentre(cell, rows);
+  return (
+    <group position={[c.x, c.y, BOARD_Z + 0.2]}>
+      <RoundedBox args={[0.78, 0.78, 0.4]} radius={0.1} smoothness={4} castShadow receiveShadow>
+        <meshPhysicalMaterial color="#56628A" roughness={0.3} clearcoat={1} clearcoatRoughness={0.15} />
+      </RoundedBox>
+      {/* Four studs, like a toy brick. */}
+      {[-0.17, 0.17].flatMap((x) =>
+        [-0.17, 0.17].map((y) => (
+          <mesh key={`${x},${y}`} position={[x, y, 0.22]} rotation-x={Math.PI / 2} castShadow>
+            <cylinderGeometry args={[0.09, 0.09, 0.07, 24]} />
+            <meshPhysicalMaterial color="#66739E" roughness={0.3} clearcoat={1} />
+          </mesh>
+        )),
+      )}
+    </group>
   );
 }
 
@@ -296,8 +318,6 @@ function Rig({ level, onView }: { level: Level; onView: (view: SceneView) => voi
 export type SceneProps = {
   level: Level;
   placed: Placed[];
-  /** Open cells get the dashed "build here" mark; empty in free build, where every cell is open. */
-  marked: CellRef[];
   hoverCell: CellRef | null;
   /** A see-through piece: where a dragged piece would snap to. */
   preview: Placed | null;
@@ -310,7 +330,7 @@ export type SceneProps = {
   onEnd: () => void;
 };
 
-export function MarbleScene({ level, placed, marked, hoverCell, preview, hint, run, spawnedAt, onView, onEvent, onEnd }: SceneProps) {
+export function MarbleScene({ level, placed, hoverCell, preview, hint, run, spawnedAt, onView, onEvent, onEnd }: SceneProps) {
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ fov: 28, near: 0.1, far: 100 }} gl={{ antialias: true, alpha: true }} style={{ pointerEvents: "none" }}>
       <Rig level={level} onView={onView} />
@@ -335,14 +355,9 @@ export function MarbleScene({ level, placed, marked, hoverCell, preview, hint, r
 
       <Table level={level} />
       <Board level={level} />
-      {marked.map((cell) => (
-        <BuildCell
-          key={`${cell.col},${cell.row}`}
-          cell={cell}
-          rows={level.rows}
-          glow={hoverCell?.col === cell.col && hoverCell?.row === cell.row}
-          filled={placed.some((p) => p.col === cell.col && p.row === cell.row)}
-        />
+      {hoverCell && <BuildCell cell={hoverCell} rows={level.rows} />}
+      {level.blocked.map((cell) => (
+        <Block key={`b${cell.col},${cell.row}`} cell={cell} rows={level.rows} />
       ))}
       <StartTube level={level} />
       <Bucket level={level} />
