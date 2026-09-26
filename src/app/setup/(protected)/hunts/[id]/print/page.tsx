@@ -27,7 +27,7 @@ export default async function PrintPage({ params, searchParams }: PageProps<"/se
         <div className="grid gap-1">
           <h1 className="font-display text-4xl text-ink">QR codes for {hunt.title}</h1>
           <p className="text-base text-ink/70">
-            Codes point to <strong>{origin}</strong>. Cut them out along the dashed lines, and fold the hiding note under.
+            Codes point to <strong>{origin}</strong>. Cut them out along the dashed lines, and fold the hiding note under. To play, scan a code with the iPad&apos;s Camera app and tap the link that pops up. To test without printing, scan one straight off this screen.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
