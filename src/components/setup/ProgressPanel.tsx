@@ -1,43 +1,27 @@
 "use client";
 
 import { ArrowsClockwise, CheckCircle, Circle } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useHydrated } from "@/components/useHydrated";
 import { formatTime } from "@/lib/format";
 import { PUZZLE_META } from "@/lib/puzzleMeta";
 import type { Hunt, Progress } from "@/lib/schema";
 import { Panel, QuietButton } from "./ui";
 
-const POLL_MS = 10_000;
-
 type Props = {
   hunt: Hunt;
-  initialProgress: Progress;
+  /** Kept fresh by the editor's sync with the server (useHuntSync). */
+  progress: Progress;
+  onProgressReset: () => void;
   flush: () => Promise<boolean>;
   onRekeyed: (hunt: Hunt) => void;
 };
 
 /** Live progress on the day, plus the two "start over" levers: reset and re-key. */
-export function ProgressPanel({ hunt, initialProgress, flush, onRekeyed }: Props) {
+export function ProgressPanel({ hunt, progress, onProgressReset, flush, onRekeyed }: Props) {
   const hydrated = useHydrated();
-  const [progress, setProgress] = useState(initialProgress);
   const [confirming, setConfirming] = useState<"reset" | "rekey" | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Poll while the tab is visible, so a parent can watch the hunt unfold.
-  useEffect(() => {
-    const refresh = async () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const res = await fetch(`/api/setup/hunts/${hunt.id}`);
-        if (res.ok) setProgress(((await res.json()) as { progress: Progress }).progress);
-      } catch (err) {
-        console.warn("[setup] progress refresh failed", err);
-      }
-    };
-    const timer = setInterval(refresh, POLL_MS);
-    return () => clearInterval(timer);
-  }, [hunt.id]);
 
   async function run(action: "reset" | "rekey") {
     setError(null);
@@ -45,7 +29,7 @@ export function ProgressPanel({ hunt, initialProgress, flush, onRekeyed }: Props
       if (action === "rekey" && !(await flush())) throw new Error("save before re-key failed");
       const res = await fetch(`/api/setup/hunts/${hunt.id}/${action === "reset" ? "reset" : "regenerate-keys"}`, { method: "POST" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      if (action === "reset") setProgress({ huntId: hunt.id, completedStationIds: [], solvedAt: {} });
+      if (action === "reset") onProgressReset();
       else onRekeyed(((await res.json()) as { hunt: Hunt }).hunt);
       setConfirming(null);
     } catch (err) {

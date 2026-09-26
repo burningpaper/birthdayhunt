@@ -14,12 +14,16 @@ import { ProgressPanel } from "./ProgressPanel";
 import { StationCard } from "./StationCard";
 import { Field, Panel, QuietButton, Segmented, TextArea, TextInput } from "./ui";
 import { useAutosave, type SaveStatus } from "./useAutosave";
+import { useHuntSync } from "./useHuntSync";
 
 type Props = { initialHunt: Hunt; initialProgress: Progress; mediaMode: MediaMode };
 
 export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
   const [hunt, setHunt] = useState(initialHunt);
-  const { status, flush } = useAutosave(hunt);
+  const autosave = useAutosave(hunt);
+  const { status, flush, adopt, markConflict, hasUnsavedChanges, currentRevision } = autosave;
+  const syncTarget = useMemo(() => ({ adopt, markConflict, hasUnsavedChanges, currentRevision }), [adopt, markConflict, hasUnsavedChanges, currentRevision]);
+  const { progress, setProgress } = useHuntSync(initialHunt.id, initialProgress, syncTarget, setHunt);
   const problems = useMemo(() => huntProblems(hunt), [hunt]);
 
   const update = (patch: Partial<Hunt>) => setHunt((h) => ({ ...h, ...patch }));
@@ -58,6 +62,23 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
         <SaveIndicator status={status} />
       </div>
 
+      {status.kind === "conflict" && (
+        <Panel className="flex flex-wrap items-center justify-between gap-4 border-2 border-tangerine">
+          <div className="flex items-start gap-3">
+            <WarningCircle weight="fill" size={32} className="shrink-0 text-tangerine" />
+            <div>
+              <h2 className="font-display text-2xl text-ink">This hunt was changed somewhere else</h2>
+              <p className="max-w-[60ch] text-base text-ink/75">
+                Another tab or device saved it after this page loaded, so this page has stopped saving to protect that work. Load the latest version, then carry on.
+              </p>
+            </div>
+          </div>
+          <PlasticButton color="tangerine" size="sm" onClick={() => window.location.reload()}>
+            Load latest
+          </PlasticButton>
+        </Panel>
+      )}
+
       <Panel className="grid gap-5">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-display text-4xl text-ink">{hunt.title || "Untitled hunt"}</h1>
@@ -92,7 +113,16 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
 
       <ReadinessPanel hunt={hunt} problems={problems} onStatus={(next) => update({ status: next })} />
 
-      <ProgressPanel hunt={hunt} initialProgress={initialProgress} onRekeyed={(rekeyed) => setHunt((h) => ({ ...h, stations: h.stations.map((s) => ({ ...s, key: rekeyed.stations.find((r) => r.id === s.id)?.key ?? s.key })) }))} flush={flush} />
+      <ProgressPanel
+        hunt={hunt}
+        progress={progress}
+        onProgressReset={() => setProgress({ huntId: hunt.id, completedStationIds: [], solvedAt: {} })}
+        flush={flush}
+        onRekeyed={(rekeyed) => {
+          adopt(rekeyed);
+          setHunt(rekeyed);
+        }}
+      />
 
       <div className="grid gap-6">
         {hunt.stations.map((station, index) => (
@@ -131,9 +161,15 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
 }
 
 function SaveIndicator({ status }: { status: SaveStatus }) {
-  const text = { saved: "All changes saved", pending: "Saving soon…", saving: "Saving…", error: status.kind === "error" ? status.message : "" }[status.kind];
+  const text = {
+    saved: "All changes saved",
+    pending: "Saving soon…",
+    saving: "Saving…",
+    error: status.kind === "error" ? status.message : "",
+    conflict: "Not saving: changed elsewhere",
+  }[status.kind];
   return (
-    <span role="status" className={`text-sm font-semibold ${status.kind === "error" ? "text-[#B42318]" : "text-ink/60"}`}>
+    <span role="status" className={`text-sm font-semibold ${status.kind === "error" || status.kind === "conflict" ? "text-[#B42318]" : "text-ink/60"}`}>
       {text}
     </span>
   );

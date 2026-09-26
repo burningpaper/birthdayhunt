@@ -1,9 +1,8 @@
 import { jsonError, readJson } from "@/lib/api";
 import { rejectUnlessAuthed } from "@/lib/auth";
-import { renumber } from "@/lib/huntFactory";
+import { applySave } from "@/lib/huntSave";
 import { HuntSchema, emptyProgress } from "@/lib/schema";
 import { getStore } from "@/lib/store";
-import { huntProblems } from "@/lib/validation";
 
 export async function GET(_request: Request, ctx: RouteContext<"/api/setup/hunts/[id]">) {
   const denied = await rejectUnlessAuthed();
@@ -16,10 +15,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/setup/hunts
   return Response.json({ hunt, progress });
 }
 
-/**
- * Save the whole hunt. The id and creation date always come from the stored
- * copy. Going live is refused, with the checklist, until the hunt is ready.
- */
+/** Save the whole hunt. The rules (including refusing stale saves) live in lib/huntSave.ts. */
 export async function PUT(request: Request, ctx: RouteContext<"/api/setup/hunts/[id]">) {
   const denied = await rejectUnlessAuthed();
   if (denied) return denied;
@@ -31,22 +27,13 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/setup/hunts/
   const parsed = await readJson(request, HuntSchema);
   if ("response" in parsed) return parsed.response;
 
-  const hunt = {
-    ...parsed.data,
-    id: existing.id,
-    createdAt: existing.createdAt,
-    stations: renumber(parsed.data.stations),
-  };
-
-  if (hunt.status === "active") {
-    const problems = huntProblems(hunt);
-    if (problems.length > 0) {
-      return jsonError(422, "This hunt isn't ready to go live yet.", { problems });
-    }
+  const result = applySave(existing, parsed.data);
+  if (!result.ok) {
+    if (result.status === 409) console.warn(`[setup] refused a stale save of ${id}: based on revision ${parsed.data.revision}, stored is ${existing.revision}`);
+    return Response.json(result.body, { status: result.status });
   }
-
-  await store.saveHunt(hunt);
-  return Response.json({ hunt });
+  await store.saveHunt(result.hunt);
+  return Response.json({ hunt: result.hunt });
 }
 
 export async function DELETE(_request: Request, ctx: RouteContext<"/api/setup/hunts/[id]">) {

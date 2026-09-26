@@ -43,6 +43,7 @@ export function newHunt(title: string, now: Date = new Date()): Hunt {
     createdAt: now.toISOString(),
     difficulty,
     status: "draft",
+    revision: 0,
     stations: DEFAULT_PUZZLE_ORDER.map((type, i) => newStation(i + 1, type, difficulty)),
   };
 }
@@ -65,6 +66,7 @@ export function duplicateHunt(source: Hunt, now: Date = new Date()): Hunt {
     title,
     createdAt: now.toISOString(),
     status: "draft",
+    revision: 0,
     stations: source.stations.map((s) => ({
       ...s,
       id: `s${shortId()}`,
@@ -75,7 +77,7 @@ export function duplicateHunt(source: Hunt, now: Date = new Date()): Hunt {
 }
 
 export function regenerateKeys(hunt: Hunt): Hunt {
-  return { ...hunt, stations: hunt.stations.map((s) => ({ ...s, key: newStationKey() })) };
+  return { ...hunt, revision: hunt.revision + 1, stations: hunt.stations.map((s) => ({ ...s, key: newStationKey() })) };
 }
 
 export function setHuntDifficulty(hunt: Hunt, difficulty: Difficulty): Hunt {
