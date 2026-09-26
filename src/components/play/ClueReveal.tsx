@@ -5,6 +5,7 @@ import { MagnifyingGlass, TreasureChest } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect } from "react";
 import { SpeakerButton } from "@/components/plastic/SpeakerButton";
+import { ScanButton } from "@/components/scan/ScanButton";
 import { playRecording, speak } from "@/lib/audio/voice";
 import type { ClueView } from "@/lib/playState";
 
@@ -68,7 +69,10 @@ export function ClueReveal({ clue, autoPlay = true }: Props) {
             {findLine}
           </div>
         </div>
-        <SpeakerButton size="xl" color="sunflower" onSpeak={hear} label="Hear the clue again" />
+        <div className="flex items-end gap-4">
+          {!clue.isFinal && <ScanButton label="Scan the next code" size="md" color="cobalt" />}
+          <SpeakerButton size="xl" color="sunflower" onSpeak={hear} label="Hear the clue again" />
+        </div>
       </div>
     </motion.div>
   );

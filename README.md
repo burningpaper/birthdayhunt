@@ -45,7 +45,7 @@ The deployed app refuses to run without Redis instead of quietly falling back to
 
 ## How it fits together
 
-A scan opens `/h/{hunt}/s/{station}?k={key}`. The server loads the hunt and the child's progress, and one pure function (`resolvePlayState` in [src/lib/playState.ts](src/lib/playState.ts)) decides whether this scan is **play**, **solved**, **not yet** or **invalid**. A second function, `toPlayResponse`, decides what may leave the server. Clues are only included once they're earned, so a curious kid with dev tools finds nothing. The jigsaw photo is the one exception, because the photo is the puzzle.
+A scan opens `/h/{hunt}/s/{station}?k={key}`. Codes can be scanned two ways: with the iPad's Camera app (they're ordinary links), or with the in-page scanner behind the "Scan a code!" buttons, which only ever opens station links on this site ([src/lib/scan.ts](src/lib/scan.ts)). The server loads the hunt and the child's progress, and one pure function (`resolvePlayState` in [src/lib/playState.ts](src/lib/playState.ts)) decides whether this scan is **play**, **solved**, **not yet** or **invalid**. A second function, `toPlayResponse`, decides what may leave the server. Clues are only included once they're earned, so a curious kid with dev tools finds nothing. The jigsaw photo is the one exception, because the photo is the puzzle.
 
 Everything else is plumbing around that decision:
 

@@ -4,6 +4,7 @@ import { MagnifyingGlass } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
+import { ScanButton } from "@/components/scan/ScanButton";
 import { unlockAudio } from "@/lib/audio/engine";
 import { speak } from "@/lib/audio/voice";
 import type { ClueView } from "@/lib/playState";
@@ -47,6 +48,7 @@ export function NotYetScreen({ lastEarnedClue }: { lastEarnedClue?: ClueView }) 
         >
           {lastEarnedClue ? "Show my clue" : "Say it"}
         </PlasticButton>
+        <ScanButton label="Scan a different code" size="md" color="cobalt" />
       </div>
     </div>
   );

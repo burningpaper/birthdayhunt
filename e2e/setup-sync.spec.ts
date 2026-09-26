@@ -20,6 +20,8 @@ async function signInAndCreateHunt(page: Page): Promise<string> {
 }
 
 async function addNameAndPhoto(page: Page) {
+  // A parent types in the tab they're looking at; hidden tabs have their timers throttled.
+  await page.bringToFront();
   await page.getByLabel("Child's name").fill("Sam");
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Choose photo" }).first().click()]);
   await chooser.setFiles(photo);
@@ -48,10 +50,15 @@ test("a stale second editor can't overwrite newer work", async ({ page, context 
   const staleTab = await context.newPage();
   await staleTab.goto(page.url());
   await expect(staleTab.getByLabel("Child's name")).toBeVisible();
+  // Keep this tab stale, like a device that was asleep: its background
+  // checks for a newer version can't get through, so only its save can.
+  const syncUrl = `**/api/setup/hunts/${id}`;
+  await staleTab.route(syncUrl, (route) => (route.request().method() === "GET" ? route.abort() : route.fallback()));
 
   await addNameAndPhoto(page);
 
   // An edit in the stale tab before it has synced: refused, not saved over the top.
+  await staleTab.bringToFront();
   await staleTab.getByLabel("Hunt title").fill("Sam's hunt");
   await expect(staleTab.getByRole("heading", { name: "This hunt was changed somewhere else" })).toBeVisible({ timeout: 15_000 });
 
@@ -60,6 +67,7 @@ test("a stale second editor can't overwrite newer work", async ({ page, context 
   expect(stored.stations[0].clue.photoUrl).toBeTruthy();
 
   // Loading the latest brings the other tab's work into this one.
+  await staleTab.unroute(syncUrl);
   await staleTab.getByRole("button", { name: "Load latest" }).click();
   await expect(staleTab.getByLabel("Child's name")).toHaveValue("Sam");
 });

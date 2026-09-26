@@ -328,3 +328,37 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .track-art { transition: none; }
 }
+
+/* ---------- In-page QR scanner ---------- */
+
+/* The viewfinder dims everything around it; its corners are sunflower plastic. */
+.scan-frame {
+  box-shadow: 0 0 0 200vmax rgb(16 28 60 / 0.55);
+  transition: box-shadow 200ms ease-out;
+}
+
+.scan-corner {
+  position: absolute;
+  width: 22%;
+  height: 22%;
+  border-color: var(--color-sunflower);
+  border-radius: var(--radius-panel);
+  filter: drop-shadow(0 4px 0 #b8860b);
+}
+
+.scan-frame[data-state="scanning"] .scan-corner {
+  animation: scan-breathe 1.6s ease-in-out infinite;
+}
+
+.scan-frame.is-found .scan-corner {
+  border-color: var(--color-grass);
+}
+
+@keyframes scan-breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.06; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-frame[data-state="scanning"] .scan-corner { animation: none; }
+}

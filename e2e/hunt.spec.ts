@@ -72,7 +72,8 @@ test("a parent builds a hunt and a child plays it end to end", async ({ page, br
   await expect(page.locator(".qr-card")).toHaveCount(6);
 
   // The child: a separate browser context with no parent cookie.
-  const child = await (await browser.newContext({ viewport: { width: 1194, height: 834 }, hasTouch: true })).newPage();
+  const childContext = await browser.newContext({ viewport: { width: 1194, height: 834 }, hasTouch: true });
+  const child = await childContext.newPage();
   const live = await loadHunt(page.request, huntId);
 
   // Scanning ahead says "not yet" and the response carries nothing about that station.
@@ -120,6 +121,7 @@ test("a parent builds a hunt and a child plays it end to end", async ({ page, br
   const done = await (await page.request.get(`/api/setup/hunts/${huntId}`)).json();
   expect(done.progress.completedStationIds).toHaveLength(6);
   expect(done.progress.finishedAt).toBeTruthy();
+  await childContext.close();
 });
 
 test("an unknown code shows the friendly invalid screen", async ({ page }) => {
