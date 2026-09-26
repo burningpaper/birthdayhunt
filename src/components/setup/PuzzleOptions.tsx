@@ -18,7 +18,7 @@ export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
     case "jigsaw":
       return (
         <div className="flex flex-wrap items-center gap-6">
-          <Segmented label="Pieces" options={numbers([6, 9, 12, 16] as const, " pieces")} value={puzzle.pieces} onChange={(pieces) => onChange({ ...puzzle, pieces })} />
+          <Segmented label="Pieces" options={numbers([6, 9, 12, 15, 16, 20] as const, " pieces")} value={puzzle.pieces} onChange={(pieces) => onChange({ ...puzzle, pieces })} />
           <Toggle label="Pieces start rotated" checked={puzzle.rotation} onChange={(rotation) => onChange({ ...puzzle, rotation })} />
         </div>
       );

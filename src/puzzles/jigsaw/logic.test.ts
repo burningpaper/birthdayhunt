@@ -23,7 +23,7 @@ describe("gridFor", () => {
   });
 
   it("always yields the requested number of pieces", () => {
-    for (const pieces of [6, 9, 12, 16] as const) {
+    for (const pieces of [6, 9, 12, 15, 16, 20] as const) {
       const { cols, rows } = gridFor(pieces, 1.33);
       expect(cols * rows).toBe(pieces);
     }
@@ -104,7 +104,7 @@ describe("layout and scatter", () => {
   });
 
   it("keeps loose pieces clear of the board and of each other, for every size", () => {
-    for (const pieces of [6, 9, 12, 16] as const) {
+    for (const pieces of [6, 9, 12, 15, 16, 20] as const) {
       for (const aspect of [4 / 3, 1, 3 / 4, 16 / 9]) {
         const { cols, rows } = gridFor(pieces, aspect);
         const l = computeLayout(1194, 738, aspect, cols, rows);

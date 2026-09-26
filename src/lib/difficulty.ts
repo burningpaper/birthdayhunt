@@ -8,8 +8,8 @@ import type { Difficulty, LockQuestion, PuzzleConfig, PuzzleType } from "./schem
 const PRESETS = {
   jigsaw: {
     easy: { pieces: 9, rotation: false },
-    medium: { pieces: 12, rotation: false },
-    hard: { pieces: 16, rotation: true },
+    medium: { pieces: 15, rotation: false },
+    hard: { pieces: 20, rotation: true },
   },
   marbleRun: { easy: { level: 2 }, medium: { level: 3 }, hard: { level: 4 } },
   trainTrack: { easy: { gridSize: 4 }, medium: { gridSize: 5 }, hard: { gridSize: 6 } },

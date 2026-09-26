@@ -7,7 +7,7 @@ import { clueTargetLabel, huntProblems } from "./validation";
 
 describe("difficulty presets", () => {
   it("uses the spec's age-7 defaults at medium", () => {
-    expect(defaultPuzzle("jigsaw", "medium")).toEqual({ type: "jigsaw", pieces: 12, rotation: false });
+    expect(defaultPuzzle("jigsaw", "medium")).toEqual({ type: "jigsaw", pieces: 15, rotation: false });
     expect(defaultPuzzle("marbleRun", "medium")).toEqual({ type: "marbleRun", level: 3 });
     expect(defaultPuzzle("trainTrack", "medium")).toEqual({ type: "trainTrack", gridSize: 5 });
     expect(defaultPuzzle("memoryMatch", "medium")).toEqual({ type: "memoryMatch", pairs: 10 });
@@ -40,7 +40,7 @@ describe("difficulty presets", () => {
 
   it("keeps a jigsaw close-up when the preset changes", () => {
     const jigsaw = { type: "jigsaw" as const, pieces: 12 as const, rotation: false, crop: { x: 0.1, y: 0.2, size: 0.5 } };
-    expect(applyDifficulty(jigsaw, "hard")).toEqual({ type: "jigsaw", pieces: 16, rotation: true, crop: { x: 0.1, y: 0.2, size: 0.5 } });
+    expect(applyDifficulty(jigsaw, "hard")).toEqual({ type: "jigsaw", pieces: 20, rotation: true, crop: { x: 0.1, y: 0.2, size: 0.5 } });
   });
 
   it("pads lock questions when dials are added", () => {
@@ -101,7 +101,7 @@ describe("hunt factory", () => {
   it("applies a difficulty preset to every station", () => {
     const hard = setHuntDifficulty(newHunt("Birthday"), "hard");
     expect(hard.difficulty).toBe("hard");
-    expect(hard.stations[0].puzzle).toEqual({ type: "jigsaw", pieces: 16, rotation: true });
+    expect(hard.stations[0].puzzle).toEqual({ type: "jigsaw", pieces: 20, rotation: true });
     expect(hard.stations[1].puzzle).toEqual({ type: "marbleRun", level: 4 });
   });
 

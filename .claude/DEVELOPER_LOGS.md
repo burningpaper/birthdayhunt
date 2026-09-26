@@ -152,3 +152,7 @@ The generator (`e2e-scratch/marble/gen2.test.ts`) now has an explicit idea of "h
 - snaking routes, with at least two changes of direction.
 
 Its old random number generator also turned out to cycle, printing the same level three times, so it was swapped for mulberry32. The chosen levels run from a 6-piece single-star warm-up to Level 3's 11 pieces with three stars on a block-free board (4,284 tempting paths, one winner), up to Level 5's 17 pieces with four stars and a loop. `levels.test.ts` holds each to it: stars on buildable squares, the shortest way to the bucket misses one, and only a couple of winning paths.
+
+## 2026-09-26 — A 15-piece jigsaw
+
+The parent asked for 15 pieces. It isn't square, but it's a tidy 5 × 3 (3 × 5 for a portrait photo), which on a normal 4:3 iPad photo gives nearly square pieces. Fifteen is now the Medium default. Hard moved up to 20 (5 × 4, with pieces starting rotated) so it stays harder than Medium, and 6, 9, 12 and 16 remain valid, so no stored hunt breaks. The loose-piece layout already packs pieces in one or two columns either side of the board; its existing test (no piece on the board, no two pieces more than 30% overlapping) now covers 15 and 20 at four photo shapes, and both sizes were screenshotted and solved by drag at iPad size. Stations keep the piece count they were saved with, so an existing jigsaw only changes when the parent picks 15 in setup.

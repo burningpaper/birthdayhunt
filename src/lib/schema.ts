@@ -36,7 +36,7 @@ export const LockQuestionSchema = z.object({
 export const PuzzleConfigSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("jigsaw"),
-    pieces: z.union([z.literal(6), z.literal(9), z.literal(12), z.literal(16)]),
+    pieces: z.union([z.literal(6), z.literal(9), z.literal(12), z.literal(15), z.literal(16), z.literal(20)]),
     rotation: z.boolean(),
     /**
      * A mystery close-up of the clue photo to build instead of the whole

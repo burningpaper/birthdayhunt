@@ -12,8 +12,10 @@ export { seededRng, shuffle, type Rng } from "../random";
 
 // ---------- Grid and tabs ----------
 
-export function gridFor(pieces: 6 | 9 | 12 | 16, aspect: number): { cols: number; rows: number } {
-  const landscape = { 6: [3, 2], 9: [3, 3], 12: [4, 3], 16: [4, 4] }[pieces];
+export type PieceCount = 6 | 9 | 12 | 15 | 16 | 20;
+
+export function gridFor(pieces: PieceCount, aspect: number): { cols: number; rows: number } {
+  const landscape = { 6: [3, 2], 9: [3, 3], 12: [4, 3], 15: [5, 3], 16: [4, 4], 20: [5, 4] }[pieces];
   const [cols, rows] = aspect >= 1 ? landscape : [landscape[1], landscape[0]];
   return { cols, rows };
 }

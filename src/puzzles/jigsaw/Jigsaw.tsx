@@ -19,6 +19,7 @@ import {
   seededRng,
   shouldSnap,
   type Layout,
+  type PieceCount,
 } from "./logic";
 
 type Move = { nx: number; ny: number; turns: number; placed: boolean };
@@ -85,7 +86,7 @@ type BoardProps = {
   aspect: number;
   width: number;
   height: number;
-  pieces: 6 | 9 | 12 | 16;
+  pieces: PieceCount;
   rotation: boolean;
   ghost: boolean;
   /** A mystery close-up to build instead of the whole photo. */
