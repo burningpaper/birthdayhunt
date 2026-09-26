@@ -66,4 +66,4 @@ Status: Complete in WebKit (6 marble E2E tests). Remaining: the parent's real-iP
 ## Stage M5: Ship
 Goal: Free-build extra on the new engine, `offered: true`, docs (DESIGN.md, DEVELOPER_LOGS.md), full gate, deploy.
 Success Criteria: Unit + E2E suites pass; production deploy verified; parent re-tests on the iPad.
-Status: In Progress. Old 2D code removed, `offered: true`, docs updated, 176 unit + 27 E2E pass. Deploying.
+Status: Complete and deployed. Remaining: the parent re-tests on the iPad.
