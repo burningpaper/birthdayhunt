@@ -9,7 +9,7 @@ export default async function ProtectedSetupLayout({ children }: LayoutProps<"/s
   if (!(await isSetupAuthed())) redirect("/setup/login");
 
   return (
-    <div className="min-h-dvh bg-paper">
+    <div className="min-h-dvh bg-paper print:min-h-0 print:bg-white">
       <header className="border-b border-ink/10 bg-white/80 backdrop-blur print:hidden">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4">
           <Link href="/setup" className="flex items-center gap-3 rounded-[var(--radius-tile)] font-display text-2xl text-ink focus-visible:outline-3 focus-visible:outline-cobalt">
@@ -21,7 +21,7 @@ export default async function ProtectedSetupLayout({ children }: LayoutProps<"/s
           <SignOutButton />
         </div>
       </header>
-      <div className="mx-auto max-w-5xl px-4 py-8">{children}</div>
+      <div className="mx-auto max-w-5xl px-4 py-8 print:max-w-none print:p-0">{children}</div>
     </div>
   );
 }

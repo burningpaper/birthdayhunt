@@ -178,9 +178,31 @@ body {
     print-color-adjust: exact;
   }
 
-  .print-sheet[data-size="half"] .qr-card {
-    height: 138mm;
+  /* Each sheet is exactly one printable A4 area (297mm minus two 10mm
+     margins, less a hair so rounding never spills onto a new page). */
+  .print-sheet {
+    display: grid;
+    height: 276mm;
+    break-after: page;
     break-inside: avoid;
+  }
+
+  .print-sheet:last-child {
+    break-after: auto;
+  }
+
+  .print-sheet[data-size="half"] {
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  .print-sheet[data-size="quarter"] {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+
+  .print-sheet .qr-card {
+    height: 100%;
+    min-height: 0;
   }
 
   .print-sheet[data-size="half"] .qr-code {
@@ -188,8 +210,6 @@ body {
   }
 
   .print-sheet[data-size="quarter"] .qr-card {
-    height: 138mm;
-    break-inside: avoid;
     padding: 6mm;
   }
 
@@ -199,6 +219,16 @@ body {
 
   .print-sheet[data-size="quarter"] .qr-card .font-display {
     font-size: 26pt;
+  }
+
+  /* Printers render blurred shadows as grey boxes: numbers print as flat colour. */
+  .qr-number {
+    box-shadow: none;
+    text-shadow: none;
+  }
+
+  .qr-number::before {
+    display: none;
   }
 }
 

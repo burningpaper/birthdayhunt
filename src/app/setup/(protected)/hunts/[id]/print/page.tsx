@@ -16,13 +16,15 @@ export default async function PrintPage({ params, searchParams }: PageProps<"/se
   const hunt = await getStore().getHunt(id);
   if (!hunt) notFound();
 
+  const perSheet = quarter ? 4 : 2;
   const origin = await siteOrigin();
   const cards = await Promise.all(
     hunt.stations.map(async (station) => ({ station, svg: await qrSvg(stationUrl(origin, hunt, station)) })),
   );
+  const sheets = Array.from({ length: Math.ceil(cards.length / perSheet) }, (_, i) => cards.slice(i * perSheet, (i + 1) * perSheet));
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 print:block">
       <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
         <div className="grid gap-1">
           <h1 className="font-display text-4xl text-ink">QR codes for {hunt.title}</h1>
@@ -38,25 +40,31 @@ export default async function PrintPage({ params, searchParams }: PageProps<"/se
         </div>
       </div>
 
-      <div className={`print-sheet grid gap-4 print:gap-0 ${quarter ? "sm:grid-cols-2 print:grid-cols-2" : ""}`} data-size={quarter ? "quarter" : "half"}>
-        {cards.map(({ station, svg }) => {
-          const meta = PUZZLE_META[station.puzzle.type];
-          return (
-            <article key={station.id} className="qr-card relative grid place-items-center gap-4 rounded-[var(--radius-panel)] border-2 border-dashed border-ink/25 bg-white p-8 text-center print:rounded-none">
-              <div className="flex items-center gap-5">
-                <span className={`plastic plastic-${meta.color} is-round grid size-20 place-items-center font-display text-5xl`}>{station.order}</span>
-                <span className="flex items-center gap-3 font-display text-5xl text-ink">
-                  Scan me!
-                  <Camera weight="fill" size={48} className="text-ink" />
-                </span>
-              </div>
-              <div className="qr-code w-full max-w-[9cm] [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
-              <p className="absolute inset-x-0 bottom-2 text-[9px] text-ink/45">
-                Station {station.order}: {station.hidingNote || "no hiding note"}
-              </p>
-            </article>
-          );
-        })}
+      {/* One A4 sheet per group: a fixed page height and a forced break after
+          each, so no browser ever has to decide where to split a code. */}
+      <div className="grid gap-6 print:block">
+        {sheets.map((sheet, i) => (
+          <section key={i} className={`print-sheet grid gap-4 print:gap-0 ${quarter ? "sm:grid-cols-2" : ""}`} data-size={quarter ? "quarter" : "half"} aria-label={`Sheet ${i + 1}`}>
+            {sheet.map(({ station, svg }) => {
+              const meta = PUZZLE_META[station.puzzle.type];
+              return (
+                <article key={station.id} className="qr-card relative grid place-items-center gap-4 rounded-[var(--radius-panel)] border-2 border-dashed border-ink/25 bg-white p-8 text-center print:rounded-none">
+                  <div className="flex items-center gap-5">
+                    <span className={`qr-number plastic plastic-${meta.color} is-round grid size-20 place-items-center font-display text-5xl`}>{station.order}</span>
+                    <span className="flex items-center gap-3 font-display text-5xl text-ink">
+                      Scan me!
+                      <Camera weight="fill" size={48} className="text-ink" />
+                    </span>
+                  </div>
+                  <div className="qr-code w-full max-w-[9cm] [&_svg]:h-auto [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: svg }} />
+                  <p className="absolute inset-x-0 bottom-2 text-[9px] text-ink/45">
+                    Station {station.order}: {station.hidingNote || "no hiding note"}
+                  </p>
+                </article>
+              );
+            })}
+          </section>
+        ))}
       </div>
     </div>
   );
