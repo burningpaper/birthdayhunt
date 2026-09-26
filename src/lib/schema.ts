@@ -94,6 +94,8 @@ export const HuntSchema = z.object({
   stations: z.array(StationSchema).min(1).max(10),
   treasureMessage: z.string().max(300).optional(),
   status: z.enum(["draft", "active"]),
+  /** When the hunt last went live. The front page's start screen uses the most recently live hunt. */
+  activatedAt: z.string().optional(),
   /**
    * Goes up by one on every save. A save must say which revision it was
    * based on, so a stale copy (a second tab, a page restored by Back) can

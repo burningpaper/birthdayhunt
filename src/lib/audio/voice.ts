@@ -28,3 +28,27 @@ export async function playRecording(url: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Play a recording and resolve once it's over: finished, stopped early
+ * (`stopTalking`), failed to load, or refused by the browser. Never rejects,
+ * so whatever comes next always happens.
+ */
+export function playRecordingToEnd(url: string): Promise<void> {
+  const element = sharedVoiceElement();
+  if (!element) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      element.removeEventListener("ended", done);
+      element.removeEventListener("pause", done);
+      element.removeEventListener("error", done);
+      resolve();
+    };
+    void playRecording(url).then((started) => {
+      if (!started) return done();
+      element.addEventListener("ended", done);
+      element.addEventListener("pause", done);
+      element.addEventListener("error", done);
+    });
+  });
+}

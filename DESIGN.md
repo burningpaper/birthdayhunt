@@ -73,9 +73,13 @@ Under `prefers-reduced-motion`, springs become short fades and confetti is a sin
 
 Every sound is synthesized with the Web Audio API, so there are no audio files to load. A short plastic "tock" on every press, a rising chirp when something snaps into place, and a four-note fanfare when a puzzle is solved. All of it unlocks from the "Tap to start" press.
 
+## Start screen
+
+While a hunt is live, the front page is nothing but one big (18rem) glossy tomato-red round button with a play glyph, on the toybox backdrop. A soft red halo breathes behind it to invite a tap. While the welcome plays, the glyph becomes a speaker and rings ripple outward; then the scanner opens.
+
 ## Voice
 
-The app never talks in a synthesized voice. Everything it says is the parent's own recording: each station's clue and lock questions, and 16 hunt-wide "voice lines" (instructions, celebrations, "Go find it!", "Not yet!", the lock's nudges), each uploaded as an audio file or recorded in setup. A line without a recording is simply not said; its words are always on screen. A speaker button only appears when there is something to play.
+The app never talks in a synthesized voice. Everything it says is the parent's own recording: each station's clue and lock questions, and 17 hunt-wide "voice lines" (the start screen's welcome, instructions, celebrations, "Go find it!", "Not yet!", the lock's nudges), each uploaded as an audio file or recorded in setup. A line without a recording is simply not said; its words are always on screen. A speaker button only appears when there is something to play.
 
 ## Icons
 

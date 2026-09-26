@@ -56,7 +56,7 @@ export function VoiceLinesPanel({ lines = {}, mediaMode, onChange }: Props) {
                         ) : (
                           <SpeakerSlash weight="fill" size={22} className="mt-0.5 shrink-0 text-ink/35" aria-label="Silent" />
                         )}
-                        “{line.words}”
+                        {line.freeform ? <span className="italic">{line.words}</span> : `“${line.words}”`}
                       </p>
                       <p className="pl-8 text-sm text-ink/60">{line.when}</p>
                     </div>

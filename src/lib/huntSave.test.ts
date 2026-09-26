@@ -13,6 +13,15 @@ function readyHunt(): Hunt {
 }
 
 describe("applySave", () => {
+  it("stamps the moment a hunt goes live, with the server's clock, and keeps it through later saves", () => {
+    const draft = readyHunt();
+    const wentLive = applySave(draft, { ...draft, status: "active", activatedAt: "1999-01-01T00:00:00.000Z" }, new Date("2026-09-26T09:00:00Z"));
+    expect(wentLive).toMatchObject({ ok: true, hunt: { activatedAt: "2026-09-26T09:00:00.000Z" } });
+    if (!wentLive.ok) return;
+    const edited = applySave(wentLive.hunt, { ...wentLive.hunt, childName: "Sam" }, new Date("2026-09-27T09:00:00Z"));
+    expect(edited).toMatchObject({ ok: true, hunt: { activatedAt: "2026-09-26T09:00:00.000Z" } });
+  });
+
   it("accepts a save based on the latest revision and bumps the revision", () => {
     const stored = { ...newHunt("Birthday"), revision: 4 };
     const result = applySave(stored, { ...stored, childName: "Sam" });

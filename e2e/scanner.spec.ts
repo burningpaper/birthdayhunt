@@ -46,7 +46,37 @@ async function fakeCameraShowing(context: BrowserContext, text: string) {
   }, image);
 }
 
-async function liveStationUrl(page: Page): Promise<string> {
+/**
+ * The front page's scan button. While a hunt is live (an earlier test may
+ * have left one live) the front page is the start screen, whose big red
+ * button opens the same scanner.
+ */
+function frontPageScanButton(kid: Page) {
+  return kid.getByRole("button", { name: /^(Scan a code!|Start the treasure hunt)$/ });
+}
+
+/** A WAV of silence, `seconds` long: real audio the page can play to the end. */
+function silentWav(seconds: number): Buffer {
+  const rate = 8000;
+  const samples = Math.round(rate * seconds);
+  const wav = Buffer.alloc(44 + samples);
+  wav.write("RIFF", 0);
+  wav.writeUInt32LE(36 + samples, 4);
+  wav.write("WAVEfmt ", 8);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20); // PCM
+  wav.writeUInt16LE(1, 22); // mono
+  wav.writeUInt32LE(rate, 24);
+  wav.writeUInt32LE(rate, 28);
+  wav.writeUInt16LE(1, 32);
+  wav.writeUInt16LE(8, 34); // 8-bit
+  wav.write("data", 36);
+  wav.writeUInt32LE(samples, 40);
+  wav.fill(128, 44); // 8-bit silence sits at the midpoint
+  return wav;
+}
+
+async function liveStationUrl(page: Page, welcomeSeconds?: number): Promise<string> {
   await page.goto("/setup/login");
   await page.getByLabel("Parent PIN").fill(PIN);
   await page.getByRole("button", { name: "Unlock" }).click();
@@ -57,6 +87,10 @@ async function liveStationUrl(page: Page): Promise<string> {
     clue: { photoUrl: "/api/media/aaaaaaaaaaaaaaaa.jpg", showText: false },
     puzzle: s.puzzle.type === "countingLock" ? { ...s.puzzle, questions: s.puzzle.questions!.map(() => ({ questionText: "How many?", answer: 2 })) } : s.puzzle,
   }));
+  if (welcomeSeconds) {
+    const upload = await page.request.post("/api/setup/upload-local", { headers: { "content-type": "audio/wav" }, data: silentWav(welcomeSeconds) });
+    hunt.voiceLines = { "start.welcome": (await upload.json()).url };
+  }
   hunt.status = "active";
   expect((await page.request.put(`/api/setup/hunts/${hunt.id}`, { data: hunt })).ok()).toBe(true);
   const s = hunt.stations[0];
@@ -70,7 +104,7 @@ test("scanning a treasure code opens its station", async ({ page, browser }) => 
   const kid = await child.newPage();
 
   await kid.goto("/");
-  await kid.getByRole("button", { name: "Scan a code!" }).click();
+  await frontPageScanButton(kid).click();
   await expect(kid).toHaveURL(new URL(printed).pathname + new URL(printed).search, { timeout: 15_000 });
   await expect(kid.getByRole("button", { name: "Tap to start!" })).toBeVisible();
 });
@@ -81,7 +115,7 @@ test("scanning someone else's QR code says it isn't a treasure code", async ({ b
   const kid = await child.newPage();
 
   await kid.goto("/");
-  await kid.getByRole("button", { name: "Scan a code!" }).click();
+  await frontPageScanButton(kid).click();
   await expect(kid.getByText("Hmm, that's not a treasure code!")).toBeVisible({ timeout: 15_000 });
   await expect(kid).toHaveURL("/");
   await kid.getByRole("button", { name: "Close the scanner" }).click();
@@ -97,7 +131,42 @@ test("a blocked camera explains how to allow it", async ({ browser }) => {
   });
   const kid = await child.newPage();
   await kid.goto("/");
-  await kid.getByRole("button", { name: "Scan a code!" }).click();
+  await frontPageScanButton(kid).click();
   await expect(kid.getByRole("heading", { name: "The camera is shy!" })).toBeVisible();
   await expect(kid.getByText("Website Settings")).toBeVisible();
+});
+
+test("while a hunt is live, the front page is its start screen: the welcome plays, then the scanner opens", async ({ page, browser }) => {
+  const printed = await liveStationUrl(page, 1);
+  const hunt = new URL(printed).pathname.split("/")[2];
+  const welcome: string = (await (await page.request.get(`/api/setup/hunts/${hunt}`)).json()).hunt.voiceLines["start.welcome"];
+  const child = await childContext(browser);
+  await fakeCameraShowing(child, printed);
+  const kid = await child.newPage();
+
+  await kid.goto("/");
+  const red = kid.getByRole("button", { name: "Start the treasure hunt" });
+  const played = kid.waitForRequest((r) => r.url().endsWith(welcome));
+  await red.click();
+  await played;
+  await expect(kid.getByRole("button", { name: "Skip to the scanner" })).toBeVisible(); // the message is playing
+  // …and when it ends, the scanner opens and reads the first code (so fast the station may already be showing).
+  await expect(kid).toHaveURL(new URL(printed).pathname + new URL(printed).search, { timeout: 15_000 });
+  await expect(kid.getByRole("button", { name: "Tap to start!" })).toBeVisible();
+});
+
+test("pressing the red button again skips the rest of the welcome", async ({ page, browser }) => {
+  await liveStationUrl(page, 30);
+  const child = await childContext(browser);
+  await fakeCameraShowing(child, "https://example.com/not-ours");
+  const kid = await child.newPage();
+
+  await kid.goto("/");
+  await kid.getByRole("button", { name: "Start the treasure hunt" }).click();
+  await kid.getByRole("button", { name: "Skip to the scanner" }).click();
+  await expect(kid.getByRole("dialog")).toBeVisible({ timeout: 2_000 }); // long before the 30s message would end
+
+  // Closing the scanner goes back to the big red button, ready to start again.
+  await kid.getByRole("button", { name: "Close the scanner" }).click();
+  await expect(kid.getByRole("button", { name: "Start the treasure hunt" })).toBeVisible();
 });

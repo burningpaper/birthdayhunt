@@ -8,6 +8,7 @@ import { PUZZLE_META } from "./puzzleMeta";
  */
 
 export const VOICE_LINE_IDS = [
+  "start.welcome",
   "instruction.jigsaw",
   "instruction.marbleRun",
   "instruction.trainTrack",
@@ -30,9 +31,17 @@ export type VoiceLineId = (typeof VOICE_LINE_IDS)[number];
 /** A hunt's recordings, by line. A missing line is silent. */
 export type VoiceLines = Partial<Record<VoiceLineId, string>>;
 
-export type VoiceLine = { id: VoiceLineId; group: string; words: string; when: string };
+/** `freeform`: the parent says whatever they like, so `words` describes it rather than scripting it. */
+export type VoiceLine = { id: VoiceLineId; group: string; words: string; when: string; freeform?: boolean };
 
 export const VOICE_LINES: VoiceLine[] = [
+  {
+    id: "start.welcome",
+    group: "Start screen",
+    words: "Your welcome message, in your own words",
+    freeform: true,
+    when: "On the front page when this hunt is running: the big red button plays it, then the scanner opens for the first code",
+  },
   ...(["jigsaw", "marbleRun", "trainTrack", "memoryMatch", "flickGolf", "countingLock"] as const).map((type) => ({
     id: `instruction.${type}` as VoiceLineId,
     group: "Puzzle instructions",

@@ -108,10 +108,13 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
     setDrag({ ...drag, at, moved });
   }
 
-  function onPointerUp() {
-    const d = drag;
+  function onPointerUp(event: ReactPointerEvent) {
+    if (!drag) return;
     setDrag(null);
-    if (!d) return;
+    // Where the finger actually lifted. The last move may not have rendered yet, and a quick flick
+    // would otherwise drop the piece where the finger was a moment earlier (a different square).
+    const at = local(event);
+    const d = { ...drag, at, moved: drag.moved || Math.hypot(at.x - drag.startX, at.y - drag.startY) > TAP_SLOP };
 
     // A tap on a placed piece turns it a quarter turn.
     if (!d.moved) {

@@ -34,12 +34,12 @@ test("a parent uploads voice lines, and the station plays them instead of a robo
 
   const panel = page.getByTestId("voice-lines");
   await panel.getByText("Voice lines").click(); // open it
-  await expect(panel.getByText("0 of 16 added")).toBeVisible();
+  await expect(panel.getByText("0 of 17 added")).toBeVisible();
 
   const instruction = panel.locator('[data-voice-line="instruction.trainTrack"]');
   await instruction.getByTestId("upload-line").setInputFiles({ name: "Tap the tracks.MP3", mimeType: "audio/mpeg", buffer: Buffer.from("ID3 not really an mp3") });
   await expect(instruction.getByRole("button", { name: "Play line" })).toBeVisible();
-  await expect(panel.getByText("1 of 16 added")).toBeVisible();
+  await expect(panel.getByText("1 of 17 added")).toBeVisible();
 
   // Something that isn't audio is refused, kindly.
   const cheer = panel.locator('[data-voice-line="celebrate.station"]');

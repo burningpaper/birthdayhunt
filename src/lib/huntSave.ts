@@ -17,8 +17,9 @@ export type SaveResult =
  * - The id and creation date always come from the stored copy.
  * - Stations are renumbered to match their order.
  * - Going live is refused, with the checklist, until the hunt is ready.
+ * - Going live stamps `activatedAt`; it's the server's clock, never the client's.
  */
-export function applySave(stored: Hunt, incoming: Hunt): SaveResult {
+export function applySave(stored: Hunt, incoming: Hunt, now: Date = new Date()): SaveResult {
   if (incoming.revision !== stored.revision) {
     return {
       ok: false,
@@ -33,6 +34,7 @@ export function applySave(stored: Hunt, incoming: Hunt): SaveResult {
     createdAt: stored.createdAt,
     stations: renumber(incoming.stations),
     revision: stored.revision + 1,
+    activatedAt: incoming.status === "active" && stored.status !== "active" ? now.toISOString() : stored.activatedAt,
   };
 
   if (hunt.status === "active") {
