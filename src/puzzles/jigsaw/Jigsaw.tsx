@@ -39,7 +39,7 @@ export function Jigsaw({ config, difficulty, cluePhotoUrl, onSolved, onAttemptFa
   if (config.type !== "jigsaw") return null;
   if (!cluePhotoUrl) {
     return (
-      <div className="grid h-full place-items-center p-8 text-center">
+      <div className="grid min-h-full place-items-center p-8 text-center">
         <div className="grid justify-items-center gap-6">
           <p className="max-w-[30ch] text-2xl font-semibold text-cream/80">This jigsaw needs a clue photo. Add one in Setup.</p>
           <PlasticButton size="lg" color="tomato" onClick={onSolved}>Skip for now</PlasticButton>

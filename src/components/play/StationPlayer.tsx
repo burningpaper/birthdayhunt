@@ -2,7 +2,7 @@
 
 import { ArrowClockwise } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { unlockAudio } from "@/lib/audio/engine";
 import { speak } from "@/lib/audio/voice";
@@ -58,6 +58,13 @@ type Phase =
 function PlayableStation({ response, huntId, stationKey, preview }: { response: PlayableResponse } & Omit<Props, "initial">) {
   const [phase, setPhase] = useState<Phase>({ name: "intro" });
   const [stars, setStars] = useState<1 | 2 | 3>(3);
+
+  // On a small screen the play area scrolls; each new phase starts at the top
+  // rather than wherever the last one was scrolled to. (The intro is left
+  // alone: its autofocused "Tap to start!" scrolls itself into view.)
+  useEffect(() => {
+    if (phase.name !== "intro") document.querySelector(".play-surface")?.scrollTo({ top: 0 });
+  }, [phase.name]);
   const { station, puzzle } = response;
   const meta = PUZZLE_META[puzzle.type];
 
@@ -110,7 +117,7 @@ function PlayableStation({ response, huntId, stationKey, preview }: { response: 
           )}
 
           {phase.name === "saveFailed" && (
-            <div className="grid h-full place-items-center p-8 text-center">
+            <div className="grid min-h-full place-items-center p-8 text-center">
               <div className="grid justify-items-center gap-8">
                 <h1 className="font-display text-6xl">Oops, the internet hiccuped!</h1>
                 <PlasticButton size="lg" color="sunflower" onClick={() => void submitSolve()}>

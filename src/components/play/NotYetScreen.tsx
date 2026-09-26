@@ -23,7 +23,7 @@ export function NotYetScreen({ lastEarnedClue }: { lastEarnedClue?: ClueView }) 
   const line = lastEarnedClue ? "Not yet! There's another clue to find first." : "Not yet! Find the very first treasure code.";
 
   return (
-    <div className="grid h-full place-items-center p-8">
+    <div className="grid min-h-full place-items-center p-8">
       <div className="grid justify-items-center gap-8 text-center">
         <motion.div
           initial={{ rotate: -20, scale: 0.7 }}

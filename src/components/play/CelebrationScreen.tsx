@@ -28,7 +28,7 @@ export function CelebrationScreen({ puzzleType, isFinal, stars = 3 }: Props) {
   }, [isFinal, meta.hex, line]);
 
   return (
-    <div className="grid h-full place-items-center p-8">
+    <div className="grid min-h-full place-items-center p-8">
       <motion.div
         initial={{ scale: 0.3, rotate: -8 }}
         animate={{ scale: 1, rotate: 0 }}

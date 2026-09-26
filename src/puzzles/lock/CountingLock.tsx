@@ -84,7 +84,7 @@ export function CountingLock({ config, onSolved, onAttemptFailed, onProgress, hi
   const bubble = hint?.text ?? message;
 
   return (
-    <div className="grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-10 px-10 pb-8">
+    <div className="grid min-h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-10 px-10 pb-8">
       <div className="grid justify-items-center gap-6">
         <div className="h-16">
           <AnimatePresence mode="wait">

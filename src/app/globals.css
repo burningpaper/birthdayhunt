@@ -362,3 +362,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .scan-frame[data-state="scanning"] .scan-corner { animation: none; }
 }
+
+/* ---------- Phone-sized screens (for testing on an iPhone) ----------
+   The play screens are designed for an iPad. On anything much smaller,
+   the play area scrolls instead of clipping, and screens grow downward
+   (min-height rather than height) so nothing ends up above the top where
+   scrolling can't reach it. iPad sizes never match this query. */
+@media (max-height: 560px), (max-width: 900px) {
+  .play-surface {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

@@ -17,7 +17,7 @@ const pop = { type: "spring", stiffness: 260, damping: 20 } as const;
 export function IntroScreen({ puzzleType, childName, onStart }: Props) {
   const meta = PUZZLE_META[puzzleType];
   return (
-    <div className="grid h-full place-items-center p-8">
+    <div className="grid min-h-full place-items-center p-8">
       <div className="grid justify-items-center gap-10 text-center">
         <motion.div
           initial={{ scale: 0.6, rotate: -12, opacity: 0 }}

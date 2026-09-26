@@ -11,7 +11,7 @@ import type { PuzzleProps } from "./types";
 export function Placeholder({ config, onSolved }: PuzzleProps) {
   const meta = PUZZLE_META[config.type];
   return (
-    <div className="grid h-full place-items-center">
+    <div className="grid min-h-full place-items-center">
       <div className="grid justify-items-center gap-8 text-center">
         <p className="font-display text-4xl text-cream/80">{meta.name} is coming soon</p>
         <PlasticButton size="xl" color={meta.color} onClick={onSolved}>

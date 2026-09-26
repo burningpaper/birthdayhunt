@@ -6,7 +6,7 @@ import { ScanButton } from "@/components/scan/ScanButton";
 /** An unknown station, a stale printed code, or a mistyped link. */
 export function InvalidScreen() {
   return (
-    <div className="grid h-full place-items-center p-8">
+    <div className="grid min-h-full place-items-center p-8">
       <div className="grid justify-items-center gap-8 text-center">
         <div className="plastic plastic-cobalt is-round grid size-40 place-items-center">
           <Question weight="fill" size={96} />
