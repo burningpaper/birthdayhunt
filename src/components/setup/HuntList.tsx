@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, MapTrifold, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, Copy, MapTrifold, Trash } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,7 @@ export function HuntList({ hunts }: { hunts: HuntSummary[] }) {
 
 function HuntRow({ hunt }: { hunt: HuntSummary }) {
   const router = useRouter();
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirming, setConfirming] = useState<"delete" | "reset" | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,16 +82,39 @@ function HuntRow({ hunt }: { hunt: HuntSummary }) {
       </Link>
 
       <div className="flex flex-wrap items-center gap-2">
-        {confirmingDelete ? (
+        {confirming === "delete" ? (
           <>
             <span className="text-base font-semibold text-ink">Delete this hunt and its progress?</span>
             <QuietButton tone="danger" disabled={busy} onClick={() => act(`/api/setup/hunts/${hunt.id}`, "DELETE", () => router.refresh())}>
               Yes, delete
             </QuietButton>
-            <QuietButton onClick={() => setConfirmingDelete(false)}>Keep it</QuietButton>
+            <QuietButton onClick={() => setConfirming(null)}>Keep it</QuietButton>
+          </>
+        ) : confirming === "reset" ? (
+          <>
+            <span className="text-base font-semibold text-ink">Set every puzzle back to unsolved?</span>
+            <QuietButton
+              tone="danger"
+              disabled={busy}
+              onClick={() =>
+                act(`/api/setup/hunts/${hunt.id}/reset`, "POST", () => {
+                  setConfirming(null);
+                  router.refresh();
+                })
+              }
+            >
+              Yes, reset
+            </QuietButton>
+            <QuietButton onClick={() => setConfirming(null)}>Cancel</QuietButton>
           </>
         ) : (
           <>
+            {hunt.found > 0 && (
+              <QuietButton disabled={busy} onClick={() => setConfirming("reset")} aria-label={`Reset progress for ${hunt.title}`}>
+                <ArrowCounterClockwise weight="bold" size={18} />
+                Reset
+              </QuietButton>
+            )}
             <QuietButton
               disabled={busy}
               onClick={() => act(`/api/setup/hunts/${hunt.id}/duplicate`, "POST", (data) => router.push(`/setup/hunts/${data.hunt?.id}`))}
@@ -99,7 +122,7 @@ function HuntRow({ hunt }: { hunt: HuntSummary }) {
               <Copy weight="bold" size={18} />
               Duplicate
             </QuietButton>
-            <QuietButton tone="danger" onClick={() => setConfirmingDelete(true)} aria-label={`Delete ${hunt.title}`}>
+            <QuietButton tone="danger" onClick={() => setConfirming("delete")} aria-label={`Delete ${hunt.title}`}>
               <Trash weight="bold" size={18} />
             </QuietButton>
           </>

@@ -66,7 +66,7 @@ export function ProgressPanel({ hunt, progress, onProgressReset, flush, onRekeye
       <div className="flex flex-wrap items-center gap-2">
         {confirming === "reset" ? (
           <>
-            <span className="text-base font-semibold">Clear all progress?</span>
+            <span className="text-base font-semibold">Set every puzzle back to unsolved?</span>
             <QuietButton tone="danger" onClick={() => void run("reset")}>Yes, reset</QuietButton>
             <QuietButton onClick={() => setConfirming(null)}>Cancel</QuietButton>
           </>
