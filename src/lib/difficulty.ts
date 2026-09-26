@@ -19,17 +19,10 @@ const PRESETS = {
 
 /**
  * The spec's order is Jigsaw, Marble Run, Train Track, Memory Match, Flick
- * Golf, Counting Lock. Until the two physics puzzles are built, new hunts
- * use six stations of the four that are (see PUZZLE_META.ready).
+ * Golf, Counting Lock. Until Marble Run is built, new hunts use that order
+ * without it, with a second Train Track to make six stations.
  */
-export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = [
-  "jigsaw",
-  "trainTrack",
-  "memoryMatch",
-  "countingLock",
-  "trainTrack",
-  "memoryMatch",
-];
+export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = ["jigsaw", "trainTrack", "memoryMatch", "flickGolf", "countingLock", "trainTrack"];
 
 function blankQuestion(): LockQuestion {
   return { questionText: "", answer: 0 };

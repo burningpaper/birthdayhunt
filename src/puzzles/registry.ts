@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { PuzzleType } from "@/lib/schema";
+import { FlickGolf } from "./golf/FlickGolf";
 import { Jigsaw } from "./jigsaw/Jigsaw";
 import { CountingLock } from "./lock/CountingLock";
 import { MemoryMatch } from "./memory/MemoryMatch";
@@ -13,6 +14,6 @@ export const PUZZLES: Record<PuzzleType, ComponentType<PuzzleProps>> = {
   marbleRun: Placeholder,
   trainTrack: TrainTrack,
   memoryMatch: MemoryMatch,
-  flickGolf: Placeholder,
+  flickGolf: FlickGolf,
   countingLock: CountingLock,
 };

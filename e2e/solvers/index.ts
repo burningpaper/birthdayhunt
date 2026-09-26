@@ -110,6 +110,26 @@ export async function solveTrack(page: Page) {
   }
 }
 
+/** Play each hole's stored sinking shot as a real drag: grab the ball on the tee, pull back, let go. */
+export async function solveGolf(page: Page) {
+  const course = page.locator("canvas.golf-course");
+  const holes = Number(await course.getAttribute("data-holes"));
+  for (let hole = 0; hole < holes; hole++) {
+    await expect(course).toHaveAttribute("data-hole", String(hole), { timeout: 10_000 });
+    await expect(course).toHaveAttribute("data-at-rest", "true");
+    const box = (await course.boundingBox())!;
+    const scale = Number(await course.getAttribute("data-scale"));
+    const [teeX, teeY] = (await course.getAttribute("data-tee"))!.split(",").map(Number);
+    const [pullX, pullY] = (await course.getAttribute("data-test-shot"))!.split(",").map(Number);
+    const from = { x: box.x + teeX * scale, y: box.y + teeY * scale };
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + pullX * scale, from.y + pullY * scale, { steps: 8 });
+    await page.mouse.up();
+    if (hole < holes - 1) await expect(course).toHaveAttribute("data-hole", String(hole + 1), { timeout: 15_000 });
+  }
+}
+
 export async function solvePlaceholder(page: Page) {
   await page.getByRole("button", { name: "Tap to solve" }).click();
 }
@@ -117,11 +137,12 @@ export async function solvePlaceholder(page: Page) {
 /** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */
 export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
   // Puzzles fade in after "Tap to start": wait until one is actually on screen.
-  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, button:has-text('Tap to solve')");
+  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, button:has-text('Tap to solve')");
   await expect(anyPuzzle.first()).toBeVisible();
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
   if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
   if (await page.locator(".dial-window").first().isVisible()) return solveLock(page, lockAnswers);
   if (await page.locator(".track-tile").first().isVisible()) return solveTrack(page);
+  if (await page.locator("canvas.golf-course").isVisible()) return solveGolf(page);
   return solvePlaceholder(page);
 }
