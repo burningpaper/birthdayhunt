@@ -1,6 +1,7 @@
 import "server-only";
 import QRCode from "qrcode";
 import { headers } from "next/headers";
+import { normalizeOrigin } from "./origin";
 import type { Hunt, Station } from "./schema";
 
 /**
@@ -9,8 +10,9 @@ import type { Hunt, Station } from "./schema";
  * otherwise the host the parent is using right now.
  */
 export async function siteOrigin(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  const configured = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL);
   if (configured) return configured;
+  if (process.env.NEXT_PUBLIC_SITE_URL) console.warn("[qr] NEXT_PUBLIC_SITE_URL is not a usable address; using this request's host");
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const protocol = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
