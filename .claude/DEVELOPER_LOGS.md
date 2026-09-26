@@ -49,3 +49,13 @@ All four core puzzles are built in one push. Each follows the same shape: pure l
 **Train Track** generates a winding route, fills the rest with decoys, and spins everything. Tests generate 180 boards and prove each is solvable twice: along its planted route, and by an independent depth-first solver. The E2E suite uses that same solver to play boards. The train ride is capped at 4 seconds, because a winding 6×6 route made it long enough to lose a seven-year-old's patience (and time out a test).
 
 Marble Run and Flick Golf remain stretch goals. They're marked "coming soon" in the editor, new hunts default to the four finished puzzles, and a hunt can't go live while a station uses an unbuilt one.
+
+## 2026-09-26 — The case of the vanishing photos
+
+The first real use ended badly: a parent added clue photos and puzzle details, went back to the editor, and found everything gone. The production logs cleared the obvious suspect straight away, because every save had returned 200. What they did show was the editor's 10-second progress poll firing every 5 seconds, which meant two copies of the editor were open on the same hunt.
+
+Two reproductions confirmed two routes to the same loss. The browser's Back button restored a cached editor showing the hunt as it was on first load, while the server still held everything. And a second, older editor saved its whole stale hunt over the newer one. The root cause was the save model: the whole hunt went up each time, last write won, and nothing checked whether the writer had seen the latest version.
+
+The fix is optimistic concurrency. Each hunt carries a `revision`, and each save names the revision it was based on. The server refuses anything older with a 409 and keeps what it has. The editor now syncs whenever it opens (including via Back), when the tab regains focus, and every 10 seconds. It quietly takes the newer copy when nothing local is unsaved, and otherwise stops and says "This hunt was changed somewhere else". The regression tests were checked the honest way: all three fail on the old code and pass on the new. (The first attempt at that check "failed" only because the old code wouldn't build with the new files still present. Stash the untracked files too.)
+
+The uploaded photo files themselves are still in Blob storage, but the overwritten hunt no longer points at them, so they had to be re-added.
