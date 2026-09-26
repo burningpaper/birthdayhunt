@@ -15,6 +15,7 @@ import { StationCard } from "./StationCard";
 import { Field, Panel, QuietButton, Segmented, TextArea, TextInput } from "./ui";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 import { useHuntSync } from "./useHuntSync";
+import { VoiceLinesPanel } from "./VoiceLinesPanel";
 
 type Props = { initialHunt: Hunt; initialProgress: Progress; mediaMode: MediaMode };
 
@@ -149,6 +150,8 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
           </QuietButton>
         </div>
       )}
+
+      <VoiceLinesPanel lines={hunt.voiceLines} mediaMode={mediaMode} onChange={(voiceLines) => update({ voiceLines })} />
 
       <div className="grid justify-items-center pb-10">
         <Link href={`/setup/hunts/${hunt.id}/print`} className="inline-flex items-center gap-2 text-base font-semibold text-cobalt underline-offset-4 hover:underline">

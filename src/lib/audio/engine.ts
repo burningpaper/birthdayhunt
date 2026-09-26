@@ -3,12 +3,12 @@
 /**
  * iOS Safari only lets a page make sound after a user gesture, and only on
  * the specific audio objects touched during that gesture. So the "Tap to
- * start!" button calls `unlockAudio()`, which wakes up all three sound paths
- * we use for the rest of the visit:
+ * start!" button calls `unlockAudio()`, which wakes up both sound paths we
+ * use for the rest of the visit:
  *
  *   1. a Web Audio context, for synthesized sound effects
- *   2. one shared <audio> element, reused for every voice clue
- *   3. the speech synthesizer, which also needs a first utterance in a gesture
+ *   2. one shared <audio> element, reused for every recording (voice lines,
+ *      clues, lock questions)
  */
 
 let context: AudioContext | null = null;
@@ -58,8 +58,5 @@ export function unlockAudio(): void {
     });
   }
 
-  if (!unlocked && "speechSynthesis" in window) {
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-  }
   unlocked = true;
 }

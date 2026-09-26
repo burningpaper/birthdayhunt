@@ -5,11 +5,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { SpeakerButton } from "@/components/plastic/SpeakerButton";
-import { speak } from "@/lib/audio/voice";
 import { initialHintState, isHintReady, recordFailure, recordProgress, spendHint, starsFor, type HintState } from "@/lib/hints";
 import { PUZZLE_META } from "@/lib/puzzleMeta";
 import type { Difficulty, PuzzleConfig } from "@/lib/schema";
 import { PUZZLES } from "@/puzzles/registry";
+import { useVoiceLines } from "./VoiceLinesContext";
 
 type Props = {
   puzzle: PuzzleConfig;
@@ -28,6 +28,8 @@ const HINT_CHECK_MS = 5000;
 export function PuzzleStage({ puzzle, difficulty, puzzlePhotoUrl, onSolved }: Props) {
   const meta = PUZZLE_META[puzzle.type];
   const Puzzle = PUZZLES[puzzle.type];
+  const voice = useVoiceLines();
+  const instruction = `instruction.${puzzle.type}` as const;
   const hints = useRef<HintState>(initialHintState(0));
   const [hintReady, setHintReady] = useState(false);
   const [hintRequest, setHintRequest] = useState(0);
@@ -49,7 +51,7 @@ export function PuzzleStage({ puzzle, difficulty, puzzlePhotoUrl, onSolved }: Pr
     <div className="relative h-full pt-24">
       <div className="absolute top-5 right-5 z-10 flex items-center gap-4">
         <p className="max-w-[30ch] text-right text-2xl font-semibold text-balance">{meta.instruction}</p>
-        <SpeakerButton onSpeak={() => speak(meta.instruction)} />
+        {voice.has(instruction) && <SpeakerButton onSpeak={() => voice.say(instruction)} />}
       </div>
 
       <Puzzle

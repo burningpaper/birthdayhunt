@@ -6,14 +6,15 @@ import { useEffect, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { SpeakerButton } from "@/components/plastic/SpeakerButton";
 import { rattle, unlock } from "@/lib/audio/sfx";
-import { sayOrPlay, speak } from "@/lib/audio/voice";
+import { playRecording } from "@/lib/audio/voice";
+import { useVoiceLines } from "@/components/play/VoiceLinesContext";
 import type { LockQuestion } from "@/lib/schema";
 import type { PuzzleProps } from "../types";
 import { checkDials, dialOfWheel, dialValues, hintDial, hintText, spin, wheelCount } from "./logic";
 
 const OPEN_MS = 1300;
 
-type Hint = { dial: number; text: string } | null;
+type Hint = { dial: number; text: string; bigger: boolean } | null;
 
 /**
  * Counting Lock (spec §6.6). Each dial asks a question about the house
@@ -41,11 +42,13 @@ export function CountingLock({ config, onSolved, onAttemptFailed, onProgress, hi
   if (hintRequest !== seenHint) {
     setSeenHint(hintRequest);
     const dial = hintDial(checkDials(values, answers), hintRequest);
-    setHint(dial === null ? null : { dial, text: hintText(dial, values[dial], answers[dial], digits) });
+    setHint(dial === null ? null : { dial, text: hintText(dial, values[dial], answers[dial], digits), bigger: answers[dial] > values[dial] });
   }
+  // Said out loud as just "bigger" or "smaller", so it can be recorded once; the bubble has the exact number.
+  const voice = useVoiceLines();
   useEffect(() => {
-    if (hint) speak(hint.text);
-  }, [hint]);
+    if (hint) voice.say(hint.bigger ? "lock.bigger" : "lock.smaller");
+  }, [hint, voice]);
 
   function turn(wheel: number, delta: 1 | -1) {
     if (open) return;
@@ -76,9 +79,9 @@ export function CountingLock({ config, onSolved, onAttemptFailed, onProgress, hi
     setAttempt((n) => n + 1);
     rattle();
     onAttemptFailed?.();
-    const line = result.some(Boolean) ? "Close! The green ones are right. Check the others again." : "Close! Check again.";
-    setMessage(line);
-    speak(line);
+    const someRight = result.some(Boolean);
+    setMessage(someRight ? "Close! The green ones are right. Check the others again." : "Close! Check again.");
+    voice.say(someRight ? "lock.closeSome" : "lock.close");
   }
 
   const bubble = hint?.text ?? message;
@@ -156,8 +159,8 @@ export function CountingLock({ config, onSolved, onAttemptFailed, onProgress, hi
           <li key={i} className={`flex items-center gap-4 rounded-[var(--radius-panel)] bg-toybox-glow/70 p-5 ${hint?.dial === i ? "ring-4 ring-sunflower" : ""}`}>
             {digits > 1 && <span className="grid size-12 shrink-0 place-items-center rounded-full bg-bubblegum font-display text-2xl text-cream">{i + 1}</span>}
             <p className="flex-1 text-2xl leading-snug font-semibold text-balance">{question?.questionText || "This question hasn't been written yet."}</p>
-            {question?.questionText && (
-              <SpeakerButton onSpeak={() => sayOrPlay(question.questionText, question.questionAudioUrl)} label={`Hear question ${i + 1}`} />
+            {question?.questionAudioUrl && (
+              <SpeakerButton onSpeak={() => void playRecording(question.questionAudioUrl!)} label={`Hear question ${i + 1}`} />
             )}
           </li>
         ))}

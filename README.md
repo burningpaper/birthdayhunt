@@ -54,7 +54,7 @@ Everything else is plumbing around that decision:
 - [src/app/api/](src/app/api/): the API from spec §8.
 - [src/components/play/](src/components/play/): the kid's screens. [src/puzzles/](src/puzzles/) holds one component per puzzle behind a shared `PuzzleProps` contract.
 - [src/components/setup/](src/components/setup/): the parent's editor, with autosave.
-- [src/lib/audio/](src/lib/audio/): the iOS audio unlock, synthesized sound effects, speech and recordings.
+- [src/lib/audio/](src/lib/audio/): the iOS audio unlock, synthesized sound effects, and playing the parent's recordings. There is no text-to-speech: every spoken line is a recording the parent uploads or records per hunt ([src/lib/voiceLines.ts](src/lib/voiceLines.ts)), and a line without one stays silent.
 
 ## Security notes
 

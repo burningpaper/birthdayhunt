@@ -5,9 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { unlockAudio } from "@/lib/audio/engine";
-import { speak } from "@/lib/audio/voice";
 import type { ClueView, PlayResponse } from "@/lib/playState";
-import { PUZZLE_META } from "@/lib/puzzleMeta";
 import { CelebrationScreen } from "./CelebrationScreen";
 import { ClueReveal } from "./ClueReveal";
 import { IntroScreen } from "./IntroScreen";
@@ -16,6 +14,7 @@ import { NotYetScreen } from "./NotYetScreen";
 import { KeepBuilding } from "@/puzzles/marble3d/KeepBuilding";
 import { PuzzleStage } from "./PuzzleStage";
 import { StationChip } from "./StationChip";
+import { VoiceLinesProvider, useVoiceLines } from "./VoiceLinesContext";
 
 type PlayableResponse = Extract<PlayResponse, { state: "play" }>;
 
@@ -29,7 +28,16 @@ type Props = {
 const CELEBRATION_MS = 2600;
 
 /** Routes a scan to the right screen. The playable path has its own state machine. */
-export function StationPlayer({ initial, huntId, stationKey, preview }: Props) {
+export function StationPlayer(props: Props) {
+  const { initial } = props;
+  return (
+    <VoiceLinesProvider lines={initial.state === "invalid" ? undefined : initial.voice}>
+      <StationScreen {...props} />
+    </VoiceLinesProvider>
+  );
+}
+
+function StationScreen({ initial, huntId, stationKey, preview }: Props) {
   switch (initial.state) {
     case "invalid":
       return <InvalidScreen />;
@@ -67,11 +75,11 @@ function PlayableStation({ response, huntId, stationKey, preview }: { response: 
     if (phase.name !== "intro") document.querySelector(".play-surface")?.scrollTo({ top: 0 });
   }, [phase.name]);
   const { station, puzzle } = response;
-  const meta = PUZZLE_META[puzzle.type];
 
+  const voice = useVoiceLines();
   const start = () => {
     unlockAudio();
-    speak(meta.instruction);
+    voice.say(`instruction.${puzzle.type}`);
     setPhase({ name: "puzzle" });
   };
 

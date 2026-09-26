@@ -6,8 +6,9 @@ import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, type ReactNode } from "react";
 import { SpeakerButton } from "@/components/plastic/SpeakerButton";
 import { ScanButton } from "@/components/scan/ScanButton";
-import { playRecording, speak } from "@/lib/audio/voice";
+import { playRecording } from "@/lib/audio/voice";
 import type { ClueView } from "@/lib/playState";
+import { useVoiceLines } from "./VoiceLinesContext";
 
 type Props = {
   clue: ClueView;
@@ -27,10 +28,14 @@ export function ClueReveal({ clue, autoPlay = true, extra }: Props) {
   const hasPhoto = Boolean(clue.photoUrl);
   const findLine = clue.isFinal ? "Go find the treasure!" : "Go find it!";
 
+  // The station's own voice clue if there is one; otherwise the hunt's "Go find it!" line, if recorded.
+  const voice = useVoiceLines();
+  const findVoice = clue.isFinal ? "clue.findTreasure" : "clue.find";
+  const canHear = Boolean(clue.audioUrl) || voice.has(findVoice);
   const hear = useCallback(() => {
     if (clue.audioUrl) void playRecording(clue.audioUrl);
-    else speak(clue.text ? `${clue.text}. ${findLine}` : findLine);
-  }, [clue.audioUrl, clue.text, findLine]);
+    else voice.say(findVoice);
+  }, [clue.audioUrl, voice, findVoice]);
 
   useEffect(() => {
     if (autoPlay) hear();
@@ -74,7 +79,7 @@ export function ClueReveal({ clue, autoPlay = true, extra }: Props) {
         <div className="flex items-end gap-4">
           {extra}
           {!clue.isFinal && <ScanButton label="Scan the next code" size="md" color="cobalt" />}
-          <SpeakerButton size="xl" color="sunflower" onSpeak={hear} label="Hear the clue again" />
+          {canHear && <SpeakerButton size="xl" color="sunflower" onSpeak={hear} label="Hear the clue again" />}
         </div>
       </div>
     </motion.div>

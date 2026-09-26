@@ -1,4 +1,5 @@
 import type { Difficulty, Hunt, Progress, PuzzleConfig, PuzzleType, Station } from "./schema";
+import { recordedLines, type VoiceLines } from "./voiceLines";
 
 /**
  * Order enforcement (spec §5.2), as pure functions.
@@ -92,14 +93,15 @@ export type PlayResponse =
   | {
       state: "play";
       childName?: string;
+      voice?: VoiceLines;
       station: StationView;
       puzzle: PuzzleConfig;
       difficulty: Difficulty;
       /** Jigsaw only: the photo the pieces are cut from. */
       puzzlePhotoUrl?: string;
     }
-  | { state: "solved"; childName?: string; station: StationView; clue: ClueView }
-  | { state: "notYet"; childName?: string; lastEarnedClue?: ClueView };
+  | { state: "solved"; childName?: string; voice?: VoiceLines; station: StationView; clue: ClueView }
+  | { state: "notYet"; childName?: string; voice?: VoiceLines; lastEarnedClue?: ClueView };
 
 function stationView(hunt: Hunt, station: Station): StationView {
   return { id: station.id, order: station.order, total: hunt.stations.length, puzzleType: station.puzzle.type };
@@ -120,6 +122,8 @@ export function clueView(hunt: Hunt, station: Station): ClueView {
 export function toPlayResponse(hunt: Hunt | null, decision: PlayDecision): PlayResponse {
   if (!hunt || decision.state === "invalid") return { state: "invalid" };
   const childName = hunt.childName;
+  // The hunt's recorded voice lines: generic prompts, never clue content, so every state may carry them.
+  const voice = recordedLines(hunt.voiceLines);
 
   switch (decision.state) {
     case "play": {
@@ -127,6 +131,7 @@ export function toPlayResponse(hunt: Hunt | null, decision: PlayDecision): PlayR
       return {
         state: "play",
         childName,
+        voice,
         station: stationView(hunt, station),
         puzzle: station.puzzle,
         difficulty: hunt.difficulty,
@@ -137,6 +142,7 @@ export function toPlayResponse(hunt: Hunt | null, decision: PlayDecision): PlayR
       return {
         state: "solved",
         childName,
+        voice,
         station: stationView(hunt, decision.station),
         clue: clueView(hunt, decision.station),
       };
@@ -144,6 +150,7 @@ export function toPlayResponse(hunt: Hunt | null, decision: PlayDecision): PlayR
       return {
         state: "notYet",
         childName,
+        voice,
         lastEarnedClue: decision.lastEarned ? clueView(hunt, decision.lastEarned) : undefined,
       };
   }

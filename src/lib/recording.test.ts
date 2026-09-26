@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration, mightNotPlayOnIpad, pickRecordingMime, recordingExtension } from "./recording";
+import { formatDuration, mightNotPlayOnIpad, pickRecordingMime, recordingExtension, uploadAudioType } from "./recording";
 
 describe("pickRecordingMime", () => {
   it("prefers MP4 when the browser supports it (Safari, recent Chrome)", () => {
@@ -38,5 +38,20 @@ describe("formatDuration", () => {
     expect(formatDuration(0)).toBe("0:00");
     expect(formatDuration(7.9)).toBe("0:07");
     expect(formatDuration(65)).toBe("1:05");
+  });
+});
+
+describe("uploadAudioType", () => {
+  it("knows the common audio files by their extension, whatever case", () => {
+    expect(uploadAudioType("You did it.MP3")).toEqual({ type: "audio/mpeg", extension: "mp3" });
+    expect(uploadAudioType("clue.m4a")).toEqual({ type: "audio/mp4", extension: "m4a" });
+    expect(uploadAudioType("memo.mp4")).toEqual({ type: "audio/mp4", extension: "m4a" });
+    expect(uploadAudioType("line.wav")).toEqual({ type: "audio/wav", extension: "wav" });
+  });
+
+  it("refuses anything else", () => {
+    expect(uploadAudioType("photo.jpg")).toBeNull();
+    expect(uploadAudioType("notes")).toBeNull();
+    expect(uploadAudioType("song.flac")).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { VOICE_LINE_IDS } from "./voiceLines";
 
 /**
  * The data model from spec §4, as zod schemas. Types are inferred from these,
@@ -99,6 +100,8 @@ export const HuntSchema = z.object({
    * never overwrite newer work. Hunts saved before this existed read as 0.
    */
   revision: z.number().int().min(0).default(0),
+  /** The hunt's recordings of the app's spoken lines (lib/voiceLines.ts). A line with none is silent. */
+  voiceLines: z.partialRecord(z.enum(VOICE_LINE_IDS), mediaUrl).optional(),
 });
 
 export const ProgressSchema = z.object({

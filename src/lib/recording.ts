@@ -33,6 +33,31 @@ export function mightNotPlayOnIpad(mime: string): boolean {
   return base === "audio/webm" || base === "audio/ogg";
 }
 
+/** Audio files a parent can upload, by extension: the type to store them as. */
+const UPLOAD_TYPES: Record<string, string> = {
+  m4a: "audio/mp4",
+  mp4: "audio/mp4",
+  aac: "audio/aac",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  webm: "audio/webm",
+};
+
+/** The biggest audio file the server accepts (it matches lib/media.ts). */
+export const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/**
+ * What an uploaded audio file should be stored as, or null if it isn't one
+ * we can play. Browsers label files inconsistently (an .m4a can arrive as
+ * "audio/x-m4a", or with no type at all), so the extension decides.
+ */
+export function uploadAudioType(fileName: string): { type: string; extension: string } | null {
+  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
+  const type = UPLOAD_TYPES[extension];
+  return type ? { type, extension: extension === "mp4" ? "m4a" : extension } : null;
+}
+
 /** "0:07" style timer text. */
 export function formatDuration(totalSeconds: number): string {
   const seconds = Math.max(0, Math.floor(totalSeconds));

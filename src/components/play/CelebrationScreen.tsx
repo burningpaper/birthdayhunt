@@ -4,17 +4,18 @@ import { Sparkle, Star } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { useEffect } from "react";
 import { fanfare, grandFanfare } from "@/lib/audio/sfx";
-import { speak } from "@/lib/audio/voice";
 import { PUZZLE_META } from "@/lib/puzzleMeta";
 import type { PuzzleType } from "@/lib/schema";
 import { celebrate, celebrateTreasure } from "./confetti";
+import { useVoiceLines } from "./VoiceLinesContext";
 
 type Props = { puzzleType: PuzzleType; isFinal: boolean; stars?: 1 | 2 | 3 };
 
-/** Confetti, fanfare and a spoken "You did it!" before the clue slides in. */
+/** Confetti, fanfare and "You did it!" (in the parent's voice, if recorded) before the clue slides in. */
 export function CelebrationScreen({ puzzleType, isFinal, stars = 3 }: Props) {
   const meta = PUZZLE_META[puzzleType];
   const line = isFinal ? "You solved every puzzle!" : "You did it!";
+  const { say } = useVoiceLines();
 
   useEffect(() => {
     if (isFinal) {
@@ -24,8 +25,8 @@ export function CelebrationScreen({ puzzleType, isFinal, stars = 3 }: Props) {
       fanfare();
       celebrate(meta.hex);
     }
-    speak(line);
-  }, [isFinal, meta.hex, line]);
+    say(isFinal ? "celebrate.final" : "celebrate.station");
+  }, [isFinal, meta.hex, say]);
 
   return (
     <div className="grid min-h-full place-items-center p-8">

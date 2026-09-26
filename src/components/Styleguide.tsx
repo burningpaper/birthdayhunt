@@ -6,7 +6,6 @@ import { SpeakerButton } from "@/components/plastic/SpeakerButton";
 import { PuzzleIcon } from "@/components/PuzzleIcon";
 import { unlockAudio } from "@/lib/audio/engine";
 import { boing, fanfare, snap } from "@/lib/audio/sfx";
-import { speak } from "@/lib/audio/voice";
 import { PUZZLE_META } from "@/lib/puzzleMeta";
 import { PUZZLE_TYPES } from "@/lib/schema";
 
@@ -44,8 +43,8 @@ export function Styleguide() {
             <PlasticButton size="md" color="cobalt" disabled>Disabled</PlasticButton>
           </div>
           <div className="flex flex-wrap items-center gap-6">
-            <SpeakerButton size="xl" color="sunflower" onSpeak={() => speak("Go find it!")} />
-            <SpeakerButton onSpeak={() => speak("Drag the pieces to build the picture!")} />
+            <SpeakerButton size="xl" color="sunflower" onSpeak={() => {}} />
+            <SpeakerButton onSpeak={() => {}} />
             <PlasticButton round size="lg" color="bubblegum" aria-label="Up"><CaretUp weight="fill" size={40} /></PlasticButton>
             <PlasticButton round size="lg" color="bubblegum" aria-label="Down"><CaretDown weight="fill" size={40} /></PlasticButton>
             <PlasticButton round size="lg" color="sunflower" aria-label="Hint" className="hint-ready"><Lightbulb weight="fill" size={40} /></PlasticButton>

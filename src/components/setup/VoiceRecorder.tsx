@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowCounterClockwise, Microphone, Play, Stop, Trash } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, Microphone, Play, Stop, Trash, UploadSimple } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
-import { formatDuration, mightNotPlayOnIpad, pickRecordingMime, recordingExtension } from "@/lib/recording";
+import { MAX_AUDIO_UPLOAD_BYTES, formatDuration, mightNotPlayOnIpad, pickRecordingMime, recordingExtension, uploadAudioType } from "@/lib/recording";
 import { uploadMedia, type MediaMode } from "@/lib/uploadClient";
 import { QuietButton } from "./ui";
 
@@ -27,8 +27,9 @@ type State =
   | { kind: "uploading" };
 
 /**
- * Record a clip with MediaRecorder and upload it. Safari records audio/mp4,
- * which is exactly what the child's iPad plays best (see lib/recording.ts).
+ * Record a clip with MediaRecorder, or upload an audio file (MP3, M4A, WAV,
+ * AAC). Safari records audio/mp4, which is exactly what the child's iPad
+ * plays best (see lib/recording.ts).
  */
 export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", maxSeconds = 60, emphasis = "primary" }: Props) {
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -42,6 +43,7 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
   const chunks = useRef<Blob[]>([]);
   const ticker = useRef<ReturnType<typeof setInterval> | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
 
   const releaseMic = () => {
     stream.current?.getTracks().forEach((track) => track.stop());
@@ -132,6 +134,39 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
     }
   }
 
+  async function uploadFile(file: File) {
+    setError(null);
+    setWarning(null);
+    const kind = uploadAudioType(file.name);
+    if (!kind) {
+      setError("That file can't be used. Choose an MP3, M4A, WAV or AAC audio file.");
+      return;
+    }
+    if (file.size > MAX_AUDIO_UPLOAD_BYTES) {
+      setError("That file is too big. Audio files can be up to 10 MB.");
+      return;
+    }
+    setState({ kind: "uploading" });
+    try {
+      // Relabel it by its extension: browsers disagree about audio types, and the server checks.
+      const clip = new Blob([file], { type: kind.type });
+      onChange(await uploadMedia(clip, `${noun.replace(/\s+/g, "-")}-${Date.now()}.${kind.extension}`, mediaMode));
+      if (mightNotPlayOnIpad(kind.type)) setWarning("Some iPads can't play this kind of file. MP3 or M4A is safest.");
+    } catch (err) {
+      console.error("[recorder] file upload failed", err);
+      setError(err instanceof Error ? err.message : "The file didn't upload. Try again.");
+    } finally {
+      setState({ kind: "idle" });
+    }
+  }
+
+  const uploadButton = (
+    <QuietButton onClick={() => picker.current?.click()} aria-label={url ? `Upload a new ${noun} file` : `Upload a ${noun} file`}>
+      <UploadSimple weight="bold" size={18} />
+      {url ? "Replace" : "Upload file"}
+    </QuietButton>
+  );
+
   function togglePlay() {
     if (!url) return;
     if (playing) {
@@ -154,6 +189,18 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
 
   return (
     <div className="grid gap-2">
+      <input
+        ref={picker}
+        type="file"
+        accept="audio/*,.mp3,.m4a,.wav,.aac"
+        className="hidden"
+        data-testid={`upload-${noun.replace(/\s+/g, "-")}`}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = ""; // choosing the same file again should still upload
+          if (file) void uploadFile(file);
+        }}
+      />
       <div className="flex flex-wrap items-center gap-3">
         {state.kind === "recording" ? (
           <>
@@ -168,7 +215,7 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
             </span>
           </>
         ) : state.kind === "uploading" ? (
-          <span className="text-base font-semibold text-ink/70" role="status">Saving recording…</span>
+          <span className="text-base font-semibold text-ink/70" role="status">Saving…</span>
         ) : state.kind === "starting" ? (
           <span className="text-base font-semibold text-ink/70" role="status">Asking for the microphone…</span>
         ) : url ? (
@@ -181,20 +228,27 @@ export function VoiceRecorder({ url, mediaMode, onChange, noun = "voice clue", m
               <ArrowCounterClockwise weight="bold" size={18} />
               Re-record
             </QuietButton>
+            {uploadButton}
             <QuietButton tone="danger" onClick={() => onChange(undefined)} aria-label={`Delete ${noun}`}>
               <Trash weight="bold" size={18} />
             </QuietButton>
           </>
         ) : emphasis === "quiet" ? (
-          <QuietButton onClick={() => void start()}>
-            <Microphone weight="fill" size={18} className="text-tomato" />
-            Record {noun} (optional)
-          </QuietButton>
+          <>
+            <QuietButton onClick={() => void start()}>
+              <Microphone weight="fill" size={18} className="text-tomato" />
+              Record {noun} (optional)
+            </QuietButton>
+            {uploadButton}
+          </>
         ) : (
-          <PlasticButton size="sm" color="tomato" onClick={() => void start()}>
-            <Microphone weight="fill" size={20} />
-            Record {noun}
-          </PlasticButton>
+          <>
+            <PlasticButton size="sm" color="tomato" onClick={() => void start()}>
+              <Microphone weight="fill" size={20} />
+              Record {noun}
+            </PlasticButton>
+            {uploadButton}
+          </>
         )}
       </div>
       {warning && <p className="text-sm font-semibold text-[#9A5B00]">{warning}</p>}

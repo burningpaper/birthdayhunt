@@ -17,6 +17,13 @@ export const ALLOWED_MEDIA: Record<string, string> = {
   "audio/mpeg": "mp3",
   "audio/webm": "webm",
   "audio/ogg": "ogg",
+  // Uploaded files, as browsers and phones label them.
+  "audio/mp3": "mp3",
+  "audio/x-mp3": "mp3",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/wave": "wav",
+  "audio/vnd.wave": "wav",
 };
 
 const TYPE_BY_EXTENSION: Record<string, string> = {
@@ -28,6 +35,7 @@ const TYPE_BY_EXTENSION: Record<string, string> = {
   mp3: "audio/mpeg",
   webm: "audio/webm",
   ogg: "audio/ogg",
+  wav: "audio/wav",
 };
 
 export function mediaMode(): MediaMode {
