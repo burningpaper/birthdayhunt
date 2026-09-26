@@ -3,14 +3,14 @@
 import { Play } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
-import { LOOK_SAMPLE } from "@/puzzles/marble3d/levels";
+import { LEVELS } from "@/puzzles/marble3d/levels";
 import { PieceIcon3d } from "@/puzzles/marble3d/PieceIcon3d";
 
 const MarbleScene = dynamic(() => import("@/puzzles/marble3d/Scene").then((m) => m.MarbleScene), { ssr: false });
 
 /** Stage M1 look prototype: a still frame of a level, laid out like a station. Removed when Marble Run 3D ships. */
 export function MarbleLab() {
-  const level = LOOK_SAMPLE;
+  const level = LEVELS[4];
   const placed = [level.solution[0]];
   return (
     <main className="toybox fixed inset-0 flex flex-col text-cream">

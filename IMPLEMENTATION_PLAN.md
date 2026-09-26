@@ -46,17 +46,17 @@ The first Marble Run worked but looked like "a bunch of lines and a tiny blue do
 ## Stage M1: Look prototype
 Goal: A static 3D render of one level on the iPad viewport: board, fixed pieces, a placed piece, marble, cup, tray.
 Success Criteria: Screenshot sent to the parent and approved before any mechanics are built; steady 60fps in WebKit at 1194×834.
-Status: In Progress. The prototype renders at /lab/marble (PIN-protected) at 60fps; screenshot sent, awaiting approval.
+Status: Complete. Approved by the parent ("I love the look"). Renders at 60fps in WebKit.
 
 ## Stage M2: Track engine (pure TS, unit-tested)
 Goal: Grid, ports, piece paths, rotation; the marble-on-track simulation (gravity speed, rolling friction, loop speed check), fly-off arc and bounce, cup detection.
-Success Criteria: Tests cover snug joins, a mismatched join causing a fly-off, a slow marble failing the loop, the same build always giving the same result.
-Status: Not Started
+Success Criteria: Tests cover snug joins, a mismatched join causing a fly-off, a marble too slow to climb rolling back, the same build always giving the same result.
+Status: Complete (`marble3d/engine.ts`, 8 tests). The loop fits inside its own cell (the track dips into it), so it can go anywhere.
 
 ## Stage M3: Five levels + sandbox data
 Goal: Levels as data (fixed cells, open build cells, tray), designed with a search tool.
 Success Criteria: Each level's solution lands in the cup; an empty board misses; random builds rarely win; a test holds every level to this.
-Status: Not Started
+Status: Complete. Five levels; at most 2 of every possible build win (Level 5: 2 of 16,476).
 
 ## Stage M4: Play
 Goal: Drag from tray to a cell (piece lifted above the finger, cell glows with a snapped 3D preview), tap to turn, drag back to remove, GO, animated run, miss → fly off, bounce, "Whoops", new marble in the tube; solve → celebration; hint ghost; sounds.

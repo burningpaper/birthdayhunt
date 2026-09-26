@@ -18,8 +18,9 @@ export const PIECE_TYPES: PieceType[] = ["straight", "curve", "loop"];
 /** Sizes, in cells. */
 export const MARBLE_RADIUS = 0.12;
 export const TUBE_RADIUS = 0.15;
-/** The loop rises a little above its own cell, like a real one standing proud of the track. */
-const LOOP_RADIUS = 0.33;
+/** The loop sits wholly inside its own cell: the track dips to its foot, goes round, and climbs back out. */
+const LOOP_RADIUS = 0.3;
+const LOOP_FOOT = -0.38;
 /** How far the loop's two crossing strands sit apart, front to back: just clear of each other. */
 const LOOP_SPLIT = TUBE_RADIUS * 2 + 0.04;
 
@@ -56,21 +57,33 @@ function curvePoints(): Vec3[] {
   });
 }
 
+/** A smooth S-bend between two points, leaving and arriving level. */
+function sBend(a: Vec3, b: Vec3, steps: number): Vec3[] {
+  const p1 = { x: a.x + (b.x - a.x) * 0.45, y: a.y, z: a.z };
+  const p2 = { x: a.x + (b.x - a.x) * 0.55, y: b.y, z: b.z };
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const t = i / steps;
+    const u = 1 - t;
+    const mix = (k: "x" | "y" | "z") => u * u * u * a[k] + 3 * u * u * t * p1[k] + 3 * u * t * t * p2[k] + t * t * t * b[k];
+    return { x: mix("x"), y: mix("y"), z: mix("z") };
+  });
+}
+
 /**
- * Left to right, with a loop-the-loop in the middle. The strand going in
- * passes behind the strand coming out, so the loop leans slightly, like a
- * real plastic one.
+ * Left to right, dipping into a loop-the-loop. The strand going in passes
+ * behind the strand coming out, so the loop leans slightly, like a real
+ * plastic one.
  */
 function loopPoints(): Vec3[] {
   const back = -LOOP_SPLIT / 2;
   const front = LOOP_SPLIT / 2;
-  const into = line(PORT.L, { x: 0, y: 0, z: back }, 8);
+  const into = sBend(PORT.L, { x: 0, y: LOOP_FOOT, z: back }, 14);
   const steps = 40;
   const loop = Array.from({ length: steps + 1 }, (_, i) => {
     const a = -Math.PI / 2 + (i / steps) * Math.PI * 2;
-    return { x: LOOP_RADIUS * Math.cos(a), y: LOOP_RADIUS + LOOP_RADIUS * Math.sin(a), z: back + (front - back) * (i / steps) };
+    return { x: LOOP_RADIUS * Math.cos(a), y: LOOP_FOOT + LOOP_RADIUS + LOOP_RADIUS * Math.sin(a), z: back + (front - back) * (i / steps) };
   });
-  const out = line({ x: 0, y: 0, z: front }, PORT.R, 8);
+  const out = sBend({ x: 0, y: LOOP_FOOT, z: front }, PORT.R, 14);
   return [...into, ...loop.slice(1), ...out.slice(1)];
 }
 
