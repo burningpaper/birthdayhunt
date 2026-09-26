@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, Plus, Printer, Rocket, WarningCircle } from "@p
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
-import { DEFAULT_PUZZLE_ORDER } from "@/lib/difficulty";
+import { defaultPuzzleType } from "@/lib/difficulty";
 import { MAX_STATIONS, MIN_STATIONS, newStation, renumber, setHuntDifficulty } from "@/lib/huntFactory";
 import type { Difficulty, Hunt, Progress, Station } from "@/lib/schema";
 import type { MediaMode } from "@/lib/uploadClient";
@@ -40,7 +40,7 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
   const addStation = () =>
     setStations((stations) => [
       ...stations,
-      newStation(stations.length + 1, DEFAULT_PUZZLE_ORDER[stations.length % DEFAULT_PUZZLE_ORDER.length], hunt.difficulty),
+      newStation(stations.length + 1, defaultPuzzleType(stations.length), hunt.difficulty),
     ]);
 
   /** Open the tab synchronously (Safari blocks pop-ups after an await), then point it at the saved station. */

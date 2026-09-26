@@ -1,3 +1,4 @@
+import { isPuzzleOffered } from "./puzzleMeta";
 import type { Difficulty, LockQuestion, PuzzleConfig, PuzzleType } from "./schema";
 
 /**
@@ -19,6 +20,12 @@ const PRESETS = {
 
 /** The spec's default order for a new hunt (§4). */
 export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = ["jigsaw", "marbleRun", "trainTrack", "memoryMatch", "flickGolf", "countingLock"];
+
+/** The puzzle a new station at this (0-based) position starts with: the default order, skipping any puzzle setup isn't offering. */
+export function defaultPuzzleType(index: number): PuzzleType {
+  const offered = DEFAULT_PUZZLE_ORDER.filter(isPuzzleOffered);
+  return offered[index % offered.length];
+}
 
 function blankQuestion(): LockQuestion {
   return { questionText: "", answer: 0 };

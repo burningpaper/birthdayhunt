@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, Play, Trash } from "@phosphor-icons/react";
 import { useState } from "react";
 import { PuzzleIcon } from "@/components/PuzzleIcon";
 import { defaultPuzzle } from "@/lib/difficulty";
-import { PUZZLE_META } from "@/lib/puzzleMeta";
+import { PUZZLE_META, isPuzzleOffered } from "@/lib/puzzleMeta";
 import { PUZZLE_TYPES, type Difficulty, type PuzzleType, type Station } from "@/lib/schema";
 import type { MediaMode } from "@/lib/uploadClient";
 import { clueTargetLabel } from "@/lib/validation";
@@ -76,9 +76,9 @@ export function StationCard({ station, total, difficulty, mediaMode, canRemove, 
             onChange={(e) => set({ puzzle: defaultPuzzle(e.target.value as PuzzleType, difficulty) })}
           >
             {PUZZLE_TYPES.map((type) => (
-              <option key={type} value={type} disabled={!PUZZLE_META[type].ready && station.puzzle.type !== type}>
+              <option key={type} value={type} disabled={!isPuzzleOffered(type) && station.puzzle.type !== type}>
                 {PUZZLE_META[type].name}
-                {PUZZLE_META[type].ready ? "" : " (coming soon)"}
+                {isPuzzleOffered(type) ? "" : " (coming soon)"}
               </option>
             ))}
           </Select>

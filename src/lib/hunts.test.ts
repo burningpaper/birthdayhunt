@@ -51,10 +51,9 @@ describe("difficulty presets", () => {
 });
 
 describe("hunt factory", () => {
-  it("creates a valid six-station draft in the spec's order, every puzzle built", () => {
+  it("creates a valid six-station draft, every puzzle built", () => {
     const hunt = newHunt("Birthday Treasure Hunt");
     expect(HuntSchema.safeParse(hunt).success).toBe(true);
-    expect(hunt.stations.map((s) => s.puzzle.type)).toEqual([...PUZZLE_TYPES]);
     expect(hunt.stations.every((s) => isPuzzleReady(s.puzzle.type))).toBe(true);
     expect(hunt.stations.map((s) => s.order)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(new Set(hunt.stations.map((s) => s.key)).size).toBe(6);
@@ -102,7 +101,19 @@ describe("hunt factory", () => {
     const hard = setHuntDifficulty(newHunt("Birthday"), "hard");
     expect(hard.difficulty).toBe("hard");
     expect(hard.stations[0].puzzle).toEqual({ type: "jigsaw", pieces: 16, rotation: true });
-    expect(hard.stations[1].puzzle).toEqual({ type: "marbleRun", level: 4 });
+    expect(hard.stations[1].puzzle).toEqual({ type: "trainTrack", gridSize: 6 });
+  });
+
+  it("never starts a new station with a puzzle setup isn't offering", () => {
+    // Marble Run is being rebuilt: new hunts skip it and cycle back round to the jigsaw.
+    const types = newHunt("Birthday").stations.map((s) => s.puzzle.type);
+    expect(types).toEqual(["jigsaw", "trainTrack", "memoryMatch", "flickGolf", "countingLock", "jigsaw"]);
+  });
+
+  it("still lets a live hunt keep a puzzle that's no longer offered", () => {
+    const hunt = newHunt("Birthday");
+    hunt.stations[1].puzzle = { type: "marbleRun", level: 3 };
+    expect(huntProblems(hunt).some((p) => p.includes("isn't built yet"))).toBe(false);
   });
 });
 
@@ -147,6 +158,7 @@ describe("huntProblems", () => {
     PUZZLE_META.marbleRun.ready = false;
     try {
       const hunt = newHunt("Birthday");
+      hunt.stations[1].puzzle = { type: "marbleRun", level: 3 };
       expect(huntProblems(hunt).some((p) => p.includes("Marble Run isn't built yet"))).toBe(true);
     } finally {
       PUZZLE_META.marbleRun.ready = true;

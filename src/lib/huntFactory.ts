@@ -1,5 +1,5 @@
 import { customAlphabet } from "nanoid";
-import { DEFAULT_PUZZLE_ORDER, applyDifficulty, defaultPuzzle } from "./difficulty";
+import { DEFAULT_PUZZLE_ORDER, applyDifficulty, defaultPuzzle, defaultPuzzleType } from "./difficulty";
 import type { Difficulty, Hunt, PuzzleType, Station } from "./schema";
 
 // No 0/o, 1/l/i: keys may be read aloud or typed by a parent one day.
@@ -44,7 +44,7 @@ export function newHunt(title: string, now: Date = new Date()): Hunt {
     difficulty,
     status: "draft",
     revision: 0,
-    stations: DEFAULT_PUZZLE_ORDER.map((type, i) => newStation(i + 1, type, difficulty)),
+    stations: Array.from({ length: DEFAULT_PUZZLE_ORDER.length }, (_, i) => newStation(i + 1, defaultPuzzleType(i), difficulty)),
   };
 }
 
