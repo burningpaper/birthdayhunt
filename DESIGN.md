@@ -73,9 +73,9 @@ Under `prefers-reduced-motion`, springs become short fades and confetti is a sin
 
 Every sound is synthesized with the Web Audio API, so there are no audio files to load. A short plastic "tock" on every press, a rising chirp when something snaps into place, and a four-note fanfare when a puzzle is solved. All of it unlocks from the "Tap to start" press.
 
-## Flick Golf obstacles
+## Flick Golf: a toy-brick course
 
-The course stays flat, side-on and glossy. Walls and low roofs are cobalt plastic blocks with a lighter top highlight and a darker lip. Sand is a speckled bunker the ball half-sinks into. Wind is a pale band of streaks drifting the way it blows, with one big arrow. The windmill is a cream tower standing on the grass with an arched doorway at its foot, where the ball rolls through, guarded by four tangerine lattice sails on a tomato hub. Under a low roof, the flag pole shortens so the flag still shows.
+Flick Golf is built from toy bricks: a generic plastic-brick look, with no brand names or logos. The sky is a sky-blue studded baseplate. The grass is green bricks in staggered courses (four studs long, rows lined up with the ground), with studs along every flat top and smooth slope bricks on inclines. Walls, roofs and the curtains that hang over hazards are red bricks. Water is clear blue tiles, with the pond floor's studs showing through; sand is flat tan tiles. The trampoline is a pink plate and the moving bridge an orange plate, both studded. The windmill is a white brick tower with clear-blue 1 × 2 windows and an arched doorway, turning grey plate sails on a round red hub. The flagpole is stacked grey bar segments, the tee a small white round plate, and the edge rails grey beams with holes. The ball stays glossy white, and aiming dots are white with a navy halo so they read against the sky.
 
 ## Start screen
 

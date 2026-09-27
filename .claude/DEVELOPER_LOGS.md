@@ -212,3 +212,11 @@ So there are now ten. Levels 6–10 came from the same generator: open 7 × 4 an
 The parent wanted the hunt saved to the iPad's home screen with a proper icon. The icon is the setup logo made big: a glossy sunflower-yellow plastic tile with a dark lip and a highlight, holding Phosphor's treasure chest in ink, on the toybox navy with a few cream sparkles. It's drawn once as an SVG (`public/icon-source.svg`, kept so it can be re-rendered) and exported by a real browser at each size: `app/apple-icon.png` (180, what iOS uses), `app/icon.png` (192, the favicon, replacing create-next-app's default) and `public/icon-192.png` / `icon-512.png` for the manifest. It's full-bleed and opaque, because iOS rounds the corners itself and fills any transparency with black.
 
 `app/manifest.ts` names the app, opens it standalone in landscape on the front page (the red start button while a hunt is live), and sets the navy theme. The layout's `appleWebApp` metadata gives the home-screen title and an opaque black status bar. A translucent one would let the clock sit over the station header.
+
+## 2026-09-27 — Golf, rebuilt in toy bricks
+
+With five days to the birthday, a nice-to-have: restyle golf to look built from toy bricks. It's purely a drawing change in `puzzles/golf/render.ts`. The physics, holes, stored shots and tests are untouched, so every proof about the course still holds.
+
+The look comes from a few primitives. A side-on **stud** is a short rounded cylinder with a lit top edge. **Brick courses** are rows one brick high, lined up with the ground so every hole's bricks agree, four studs long, alternate rows offset by two, each with a light top edge and a dark bottom edge. **Plates** are thin bricks with studs. Ground islands are clipped to their outline and filled with green courses, with studs placed on flat tops only (never over the cup's mouth) and a glossy line up each slope.
+
+Hundreds of studs every frame would be wasteful on an iPad, so the parts that never move (the baseplate, and each hole's ground, water body, sand, walls, tower and rails) are painted once into offscreen canvases, keyed by hole and drawing scale. Each frame draws those two images, with the wind band sandwiched between them, then only what moves: water shimmer, flag, windmill sails, trampoline, bridge, tee, aim and ball.
