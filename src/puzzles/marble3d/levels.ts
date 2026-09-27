@@ -206,6 +206,177 @@ export const LEVELS: Level[] = [
       straight(5, 3, 0),
     ],
   }),
+  //         v
+  // | .  ┌──┘  .  .  .  . |
+  // | .  * ─────────────┐ |
+  // | .  .  .  . ### .  * |
+  // |\_/────── * ────O──┘ |
+  level({
+    name: "Loop and back",
+    cols: 7,
+    rows: 4,
+    start: 2,
+    cup: { col: 0, row: 3 },
+    fixed: [],
+    blocked: cells([4, 2]),
+    stars: cells([1, 1], [6, 2], [3, 3]),
+    tray: pieces({ curve: 5, straight: 11, loop: 1 }),
+    solution: [
+      curve(2, 0, 3),
+      curve(1, 0, 1),
+      curve(1, 1, 2),
+      straight(2, 1, 0),
+      straight(3, 1, 0),
+      straight(4, 1, 0),
+      straight(5, 1, 0),
+      curve(6, 1, 0),
+      straight(6, 2, 1),
+      curve(6, 3, 3),
+      loop(5, 3),
+      straight(4, 3, 0),
+      straight(3, 3, 0),
+      straight(2, 3, 0),
+      straight(1, 3, 0),
+    ],
+  }),
+  //               v
+  // | .  .  .  .  └────────┐ |
+  // | .  .  .  . ### * ─── * |
+  // | . ### .  .  .  └──┐ ###|
+  // |\_/ * ─O─────── * ─┘  . |
+  level({
+    name: "Four-star zigzag",
+    cols: 8,
+    rows: 4,
+    start: 4,
+    cup: { col: 0, row: 3 },
+    fixed: [],
+    blocked: cells([4, 1], [7, 2], [1, 2]),
+    stars: cells([5, 3], [7, 1], [5, 1], [1, 3]),
+    tray: pieces({ curve: 8, straight: 8, loop: 1 }),
+    solution: [
+      curve(4, 0, 2),
+      straight(5, 0, 0),
+      straight(6, 0, 0),
+      curve(7, 0, 0),
+      curve(7, 1, 3),
+      straight(6, 1, 0),
+      curve(5, 1, 1),
+      curve(5, 2, 2),
+      curve(6, 2, 0),
+      curve(6, 3, 3),
+      straight(5, 3, 0),
+      straight(4, 3, 0),
+      straight(3, 3, 0),
+      loop(2, 3),
+      straight(1, 3, 0),
+    ],
+  }),
+  //            v
+  // | .  .  .  └──── * ─── * |
+  // | .  * ─O──────────────┘ |
+  // | .  └─ * ### .  .  .  . |
+  // |\_/────┘  .  .  .  .  . |
+  level({
+    name: "The long way home",
+    cols: 8,
+    rows: 4,
+    start: 3,
+    cup: { col: 0, row: 3 },
+    fixed: [],
+    blocked: cells([3, 2]),
+    stars: cells([1, 1], [2, 2], [7, 0], [5, 0]),
+    tray: pieces({ curve: 7, straight: 10, loop: 1 }),
+    solution: [
+      curve(3, 0, 2),
+      straight(4, 0, 0),
+      straight(5, 0, 0),
+      straight(6, 0, 0),
+      curve(7, 0, 0),
+      curve(7, 1, 3),
+      straight(6, 1, 0),
+      straight(5, 1, 0),
+      straight(4, 1, 0),
+      straight(3, 1, 0),
+      loop(2, 1),
+      curve(1, 1, 1),
+      curve(1, 2, 2),
+      curve(2, 2, 0),
+      curve(2, 3, 3),
+      straight(1, 3, 0),
+    ],
+  }),
+  //   v
+  // | └──O─ * ───────── * |
+  // |### .  .  . ### * ─┘ |
+  // | .  .  .  . ### └──┐ |
+  // |\_/────────────────┘ |
+  level({
+    name: "Round the houses",
+    cols: 7,
+    rows: 4,
+    start: 0,
+    cup: { col: 0, row: 3 },
+    fixed: [],
+    blocked: cells([4, 1], [4, 2], [0, 1]),
+    stars: cells([2, 0], [5, 1], [6, 0]),
+    tray: pieces({ curve: 7, loop: 1, straight: 11 }),
+    solution: [
+      curve(0, 0, 2),
+      loop(1, 0),
+      straight(2, 0, 0),
+      straight(3, 0, 0),
+      straight(4, 0, 0),
+      straight(5, 0, 0),
+      curve(6, 0, 0),
+      curve(6, 1, 3),
+      curve(5, 1, 1),
+      curve(5, 2, 2),
+      curve(6, 2, 0),
+      curve(6, 3, 3),
+      straight(5, 3, 0),
+      straight(4, 3, 0),
+      straight(3, 3, 0),
+      straight(2, 3, 0),
+      straight(1, 3, 0),
+    ],
+  }),
+  //      v
+  // | .  └─────O──── *  . |
+  // | . ### . ### ┌──┘ ###|
+  // | * ──────────┘  .  . |
+  // | └──── * ─────────\_/|
+  level({
+    name: "The marathon",
+    cols: 7,
+    rows: 4,
+    start: 1,
+    cup: { col: 6, row: 3 },
+    fixed: [],
+    blocked: cells([6, 1], [3, 1], [1, 1]),
+    stars: cells([0, 2], [2, 3], [5, 0]),
+    tray: pieces({ curve: 9, straight: 10, loop: 1 }),
+    solution: [
+      curve(1, 0, 2),
+      straight(2, 0, 0),
+      loop(3, 0),
+      straight(4, 0, 0),
+      curve(5, 0, 0),
+      curve(5, 1, 3),
+      curve(4, 1, 1),
+      curve(4, 2, 3),
+      straight(3, 2, 0),
+      straight(2, 2, 0),
+      straight(1, 2, 0),
+      curve(0, 2, 1),
+      curve(0, 3, 2),
+      straight(1, 3, 0),
+      straight(2, 3, 0),
+      straight(3, 3, 0),
+      straight(4, 3, 0),
+      straight(5, 3, 0),
+    ],
+  }),
 ];
 
 /** The levels a station plays, in order: from its first level, as many in a row as it asks for (never past the last). */

@@ -18,7 +18,7 @@ async function marbleStation(page: Page, level: number): Promise<string> {
   return `/h/${hunt.id}/s/${s.id}?k=${s.key}&preview=1`;
 }
 
-for (const level of [1, 3, 5]) {
+for (const level of [1, 3, 5, 10]) {
   test(`level ${level} can be built and solved`, async ({ page }) => {
     test.setTimeout(60_000);
     await page.goto(await marbleStation(page, level));

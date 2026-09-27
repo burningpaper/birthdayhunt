@@ -5,6 +5,7 @@ import type { LockQuestion, PuzzleConfig } from "@/lib/schema";
 import type { MediaMode } from "@/lib/uploadClient";
 import { CardPhotosField } from "./CardPhotosField";
 import { HOLES } from "@/puzzles/golf/holes";
+import { LEVELS } from "@/puzzles/marble3d/levels";
 import { Field, Segmented, Select, TextInput, Toggle } from "./ui";
 import { VoiceRecorder } from "./VoiceRecorder";
 
@@ -27,17 +28,24 @@ export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
       return (
         <div className="flex flex-wrap items-end gap-6">
           <Field label="Start at">
-            <Segmented
-              label="Start at"
-              options={numbers([1, 2, 3, 4, 5] as const).map((o) => ({ ...o, label: `Level ${o.value}` }))}
+            <Select
               value={puzzle.level}
-              // Keep the run inside the five levels.
-              onChange={(level) => onChange({ ...puzzle, level, levels: Math.min(puzzle.levels ?? 1, 6 - level) })}
-            />
+              // Keep the run inside the levels there are.
+              onChange={(e) => {
+                const level = Number(e.target.value);
+                onChange({ ...puzzle, level, levels: Math.min(puzzle.levels ?? 1, LEVELS.length - level + 1) });
+              }}
+            >
+              {LEVELS.map((l, i) => (
+                <option key={l.name} value={i + 1}>
+                  Level {i + 1}: {l.name}
+                </option>
+              ))}
+            </Select>
           </Field>
           <Field label="Levels in a row">
             <Select value={puzzle.levels ?? 1} onChange={(e) => onChange({ ...puzzle, levels: Number(e.target.value) })}>
-              {Array.from({ length: 6 - puzzle.level }, (_, i) => i + 1).map((n) => (
+              {Array.from({ length: LEVELS.length - puzzle.level + 1 }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
                   {n === 1 ? `Just level ${puzzle.level}` : `${n} levels (${puzzle.level} to ${puzzle.level + n - 1})`}
                 </option>

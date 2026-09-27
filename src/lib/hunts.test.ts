@@ -102,7 +102,7 @@ describe("hunt factory", () => {
     const hard = setHuntDifficulty(newHunt("Birthday"), "hard");
     expect(hard.difficulty).toBe("hard");
     expect(hard.stations[0].puzzle).toEqual({ type: "jigsaw", pieces: 20, rotation: true });
-    expect(hard.stations[1].puzzle).toEqual({ type: "marbleRun", level: 2, levels: 4 });
+    expect(hard.stations[1].puzzle).toEqual({ type: "marbleRun", level: 4, levels: 4 });
   });
 
   it("never starts a new station with a puzzle setup isn't offering", () => {

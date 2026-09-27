@@ -11,7 +11,7 @@ const PRESETS = {
     medium: { pieces: 15, rotation: false },
     hard: { pieces: 20, rotation: true },
   },
-  marbleRun: { easy: { level: 1, levels: 2 }, medium: { level: 1, levels: 4 }, hard: { level: 2, levels: 4 } },
+  marbleRun: { easy: { level: 1, levels: 2 }, medium: { level: 1, levels: 4 }, hard: { level: 4, levels: 4 } },
   trainTrack: { easy: { gridSize: 4 }, medium: { gridSize: 5 }, hard: { gridSize: 6 } },
   memoryMatch: { easy: { pairs: 8 }, medium: { pairs: 10 }, hard: { pairs: 12 } },
   flickGolf: { easy: { holes: 4 }, medium: { holes: 6 }, hard: { holes: 9 } },

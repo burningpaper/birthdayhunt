@@ -53,9 +53,10 @@ describe.each(LEVELS.map((level, i) => [i + 1, level] as const))("level %i", (nu
 });
 
 describe("the levels together", () => {
-  it("get longer: each needs more pieces than the one before", () => {
+  it("ramp up over the first four, and stay big from there: every level from 4 on needs at least 14 pieces", () => {
     const sizes = LEVELS.map((l) => l.solution.length);
-    sizes.slice(1).forEach((n, i) => expect(n).toBeGreaterThan(sizes[i]));
+    sizes.slice(1, 4).forEach((n, i) => expect(n).toBeGreaterThan(sizes[i]));
+    sizes.slice(3).forEach((n) => expect(n).toBeGreaterThanOrEqual(14));
   });
 
   it("hint the next piece of the winning route closest to what's built", () => {
@@ -80,6 +81,6 @@ describe("a station's levels", () => {
   });
 
   it("never runs past the last level", () => {
-    expect(stationLevels({ type: "marbleRun", level: 4, levels: 5 })).toEqual([4, 5]);
+    expect(stationLevels({ type: "marbleRun", level: 8, levels: 5 })).toEqual([8, 9, 10]);
   });
 });
