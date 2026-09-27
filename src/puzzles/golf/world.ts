@@ -1,5 +1,5 @@
 import Matter from "matter-js";
-import { BALL_RADIUS, CUP, WORLD, type Hole, type Point } from "./holes";
+import { BALL_RADIUS, CUP, WORLD, type Hole, type Point, type Rect, type Windmill } from "./holes";
 
 /**
  * One hole's physics, with no drawing, so the same code runs in the browser
@@ -14,6 +14,8 @@ export const MAX_SPEED = 18;
 const GROUND_THICKNESS = 40;
 const REST_SPEED = 0.12;
 const REST_TICKS = 20;
+/** Inside sand, the ball keeps this much of its speed each tick. */
+const SAND_GRIP = 0.8;
 
 export type GolfEvent = "none" | "sunk" | "lost" | "stopped";
 
@@ -22,6 +24,7 @@ export type GolfWorld = {
   engine: Matter.Engine;
   ball: Matter.Body;
   platform?: Matter.Body;
+  windmill?: Matter.Body;
   tick: number;
   /** Where the ball goes back to if it's lost: the last place it came to rest. */
   restSpot: Point;
@@ -56,6 +59,35 @@ export function platformX(world: Pick<GolfWorld, "hole" | "tick">): number | nul
   return p.fromX + (travelled <= span ? travelled : span * 2 - travelled);
 }
 
+/** How many ticks until the windmill looks the same again (one blade's share of a turn). */
+export function windmillPeriod(windmill: Windmill): number {
+  return windmill.period;
+}
+
+/** Radians per tick. */
+export function windmillSpeed(windmill: Windmill): number {
+  return (Math.PI * 2) / windmill.blades / windmill.period;
+}
+
+export function windmillAngle(windmill: Windmill, tick: number): number {
+  return windmillSpeed(windmill) * (tick % (windmill.period * windmill.blades));
+}
+
+/** The blades as one rigid body turning about the hub. */
+function windmillBody(w: Windmill): Matter.Body {
+  const parts = Array.from({ length: w.blades }, (_, i) => {
+    const a = (i * Math.PI * 2) / w.blades;
+    return Matter.Bodies.rectangle(w.x + (Math.cos(a) * w.arm) / 2, w.y + (Math.sin(a) * w.arm) / 2, w.arm, 16, { angle: a });
+  });
+  const body = Matter.Body.create({ parts, isStatic: true, friction: 0.2, restitution: 0.5, label: "windmill" });
+  Matter.Body.setPosition(body, { x: w.x, y: w.y }); // turn about the hub, not the parts' centroid
+  return body;
+}
+
+function inside(p: Point, r: Rect): boolean {
+  return p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h;
+}
+
 export function createWorld(hole: Hole): GolfWorld {
   const engine = Matter.Engine.create({ positionIterations: 10, velocityIterations: 8 });
   const bodies: Matter.Body[] = [];
@@ -66,6 +98,12 @@ export function createWorld(hole: Hole): GolfWorld {
   for (const pad of hole.bouncePads ?? []) {
     bodies.push(Matter.Bodies.rectangle(pad.x + pad.w / 2, pad.y - 6, pad.w, 12, { isStatic: true, restitution: 1.25, friction: 0.2, label: "pad" }));
   }
+
+  for (const wall of hole.walls ?? []) {
+    bodies.push(Matter.Bodies.rectangle(wall.x + wall.w / 2, wall.y + wall.h / 2, wall.w, wall.h, { isStatic: true, chamfer: { radius: 6 }, friction: 0.6, restitution: 0.35, label: "wall" }));
+  }
+  const windmill = hole.windmill ? windmillBody(hole.windmill) : undefined;
+  if (windmill) bodies.push(windmill);
 
   let platform: Matter.Body | undefined;
   if (hole.movingPlatform) {
@@ -85,7 +123,7 @@ export function createWorld(hole: Hole): GolfWorld {
   bodies.push(ball);
   Matter.Composite.add(engine.world, bodies);
 
-  return { hole, engine, ball, platform, tick: 0, restSpot: { ...hole.tee }, stillTicks: 0, inFlight: false, sunk: false };
+  return { hole, engine, ball, platform, windmill, tick: 0, restSpot: { ...hole.tee }, stillTicks: 0, inFlight: false, sunk: false };
 }
 
 /** Launch velocity for a pull-back (the finger's offset from the ball). */
@@ -146,6 +184,21 @@ export function step(world: GolfWorld): GolfEvent {
     Matter.Body.setPosition(world.platform, { x: next, y: world.platform.position.y });
   }
 
+  if (world.windmill && world.hole.windmill) {
+    // Turn it by setting the angle each tick (deterministic), with a matching spin so a hit ball is batted, not just blocked.
+    Matter.Body.setAngle(world.windmill, windmillAngle(world.hole.windmill, world.tick));
+    Matter.Body.setAngularVelocity(world.windmill, windmillSpeed(world.hole.windmill));
+  }
+
+  // Wind pushes; sand grabs.
+  const at = world.ball.position;
+  for (const zone of world.hole.wind ?? []) {
+    if (inside(at, zone)) Matter.Body.setVelocity(world.ball, { x: world.ball.velocity.x + zone.push.x, y: world.ball.velocity.y + zone.push.y });
+  }
+  if ((world.hole.sand ?? []).some((zone) => inside(at, zone))) {
+    Matter.Body.setVelocity(world.ball, { x: world.ball.velocity.x * SAND_GRIP, y: world.ball.velocity.y * SAND_GRIP });
+  }
+
   Matter.Engine.update(world.engine, TICK_MS);
 
   if (inCup(world)) {
@@ -184,9 +237,10 @@ export function predictPath(from: Point, pull: Point, ticks: number, every = 3):
   return points;
 }
 
-/** Play one shot from the tee to the end. Used by tests, and to check a hole is fair. */
-export function simulateShot(hole: Hole, pull: Point, maxTicks = 900): GolfEvent {
+/** Play one shot from the tee to the end, released `wait` ticks after the hole starts. Used by tests, and to check a hole is fair. */
+export function simulateShot(hole: Hole, pull: Point, maxTicks = 900, wait = 0): GolfEvent {
   const world = createWorld(hole);
+  for (let i = 0; i < wait; i++) step(world);
   shoot(world, pull);
   for (let i = 0; i < maxTicks; i++) {
     const event = step(world);

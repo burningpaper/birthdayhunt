@@ -73,6 +73,10 @@ Under `prefers-reduced-motion`, springs become short fades and confetti is a sin
 
 Every sound is synthesized with the Web Audio API, so there are no audio files to load. A short plastic "tock" on every press, a rising chirp when something snaps into place, and a four-note fanfare when a puzzle is solved. All of it unlocks from the "Tap to start" press.
 
+## Flick Golf obstacles
+
+The course stays flat, side-on and glossy. Walls and low roofs are cobalt plastic blocks with a lighter top highlight and a darker lip. Sand is a speckled bunker the ball half-sinks into. Wind is a pale band of streaks drifting the way it blows, with one big arrow. The windmill is a cream tower standing on the grass with an arched doorway at its foot, where the ball rolls through, guarded by four tangerine lattice sails on a tomato hub. Under a low roof, the flag pole shortens so the flag still shows.
+
 ## Start screen
 
 While a hunt is live, the front page is nothing but one big (18rem) glossy tomato-red round button with a play glyph, on the toybox backdrop. A soft red halo breathes behind it to invite a tap. While the welcome plays, the glyph becomes a speaker and rings ripple outward; then the scanner opens.

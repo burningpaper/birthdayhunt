@@ -1,4 +1,4 @@
-import { BALL_RADIUS, CUP, WORLD, type Hole, type Point } from "./holes";
+import { BALL_RADIUS, CUP, WORLD, type Hole, type Point, type Rect, type Windmill } from "./holes";
 
 /**
  * Drawing one frame of Flick Golf onto a canvas, in world units (the caller
@@ -19,12 +19,20 @@ const COLORS = {
   flag: "#F0453A",
   cream: "#FFF7E8",
   ink: "#14213F",
+  block: "#2F6BEA",
+  blockLip: "#1C47A8",
+  sand: "#F2D48A",
+  sandDark: "#D9B25E",
+  sail: "#FF8A1F",
+  sailLip: "#B8600F",
 };
 
 export type Frame = {
   hole: Hole;
   ball: Point;
   platformX: number | null;
+  /** The windmill's current angle, if the hole has one. */
+  windmillAngle: number | null;
   aim: { pull: Point; dots: Point[] } | null;
   /** Pulse the "grab me" ring when the ball is waiting for a shot. */
   ready: boolean;
@@ -60,12 +68,13 @@ function drawIsland(ctx: CanvasRenderingContext2D, points: Point[]) {
   ctx.stroke();
 }
 
-function drawCupAndFlag(ctx: CanvasRenderingContext2D, cup: Point, time: number) {
+function drawCupAndFlag(ctx: CanvasRenderingContext2D, cup: Point, time: number, roofAbove: number | null) {
   ctx.fillStyle = COLORS.cup;
   roundRect(ctx, cup.x - CUP.width / 2 + 2, cup.y + 2, CUP.width - 4, CUP.depth - 2, 6);
   ctx.fill();
 
-  const top = cup.y - 110;
+  // Under a low roof the pole is shorter, so the flag still shows beneath it.
+  const top = Math.max(cup.y - 110, (roofAbove ?? -Infinity) + 10);
   ctx.strokeStyle = COLORS.cream;
   ctx.lineWidth = 5;
   ctx.lineCap = "round";
@@ -82,6 +91,143 @@ function drawCupAndFlag(ctx: CanvasRenderingContext2D, cup: Point, time: number)
   ctx.quadraticCurveTo(cup.x + 30, top + 8 + wave, cup.x + 58, top + 18);
   ctx.quadraticCurveTo(cup.x + 30, top + 26 - wave, cup.x + 2, top + 38);
   ctx.closePath();
+  ctx.fill();
+}
+
+/** A glossy plastic block: walls to go over, roofs to go under. */
+function drawBlock(ctx: CanvasRenderingContext2D, r: Rect) {
+  ctx.fillStyle = COLORS.blockLip;
+  roundRect(ctx, r.x, r.y + 4, r.w, r.h, 8);
+  ctx.fill();
+  ctx.fillStyle = COLORS.block;
+  roundRect(ctx, r.x, r.y, r.w, r.h - 2, 8);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  roundRect(ctx, r.x + 5, r.y + 4, r.w - 10, Math.min(8, r.h / 4), 4);
+  ctx.fill();
+}
+
+/** A sand bunker: the pit filled almost to the brim, speckled. */
+function drawSand(ctx: CanvasRenderingContext2D, zone: Rect) {
+  const top = zone.y + zone.h - 20;
+  ctx.fillStyle = COLORS.sand;
+  ctx.beginPath();
+  ctx.moveTo(zone.x, zone.y + zone.h + 4);
+  ctx.lineTo(zone.x, top + 6);
+  ctx.quadraticCurveTo(zone.x + zone.w / 2, top - 6, zone.x + zone.w, top + 6);
+  ctx.lineTo(zone.x + zone.w, zone.y + zone.h + 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = COLORS.sandDark;
+  for (let i = 0; i < zone.w / 9; i++) {
+    const x = zone.x + 6 + ((i * 37) % (zone.w - 12));
+    const y = top + 8 + ((i * 13) % 12);
+    ctx.fillRect(x, y, 3, 3);
+  }
+}
+
+/** Wind: a pale band with streaks drifting the way it blows, plus an arrow. */
+function drawWind(ctx: CanvasRenderingContext2D, zone: Rect & { push: Point }, time: number) {
+  const top = Math.max(zone.y, 0);
+  const bottom = Math.min(zone.y + zone.h, WORLD.height);
+  ctx.fillStyle = "rgba(143,178,255,0.10)";
+  ctx.fillRect(zone.x, top, zone.w, bottom - top);
+  const dir = Math.sign(zone.push.x) || 1;
+  ctx.strokeStyle = "rgba(220,232,255,0.45)";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  for (let row = 0, y = top + 30; y < bottom - 20; row++, y += 46) {
+    const drift = ((time / 6) * dir + row * 57) % zone.w;
+    for (let k = 0; k < 3; k++) {
+      const x = zone.x + ((drift + (k * zone.w) / 3 + zone.w) % zone.w);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 34 * dir, y);
+      ctx.stroke();
+    }
+  }
+  // A big arrow near the top, so it reads at a glance.
+  const ax = zone.x + zone.w / 2;
+  const ay = top + 16;
+  ctx.fillStyle = "rgba(220,232,255,0.8)";
+  ctx.beginPath();
+  ctx.moveTo(ax - 30 * dir, ay - 5);
+  ctx.lineTo(ax + 10 * dir, ay - 5);
+  ctx.lineTo(ax + 10 * dir, ay - 13);
+  ctx.lineTo(ax + 32 * dir, ay);
+  ctx.lineTo(ax + 10 * dir, ay + 13);
+  ctx.lineTo(ax + 10 * dir, ay + 5);
+  ctx.lineTo(ax - 30 * dir, ay + 5);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/**
+ * The windmill's tower. Only its upper part is solid (that's what stops a
+ * lob); it's drawn down to the ground with an arched doorway at the foot,
+ * the way through that the turning sails guard, like a mini-golf windmill.
+ */
+function drawTower(ctx: CanvasRenderingContext2D, tower: Rect, ground: number) {
+  const top = Math.max(tower.y, -20);
+  const flare = 22;
+  ctx.fillStyle = "#E9DFC9";
+  ctx.beginPath();
+  ctx.moveTo(tower.x + 10, top);
+  ctx.lineTo(tower.x + tower.w - 10, top);
+  ctx.lineTo(tower.x + tower.w + flare, ground);
+  ctx.lineTo(tower.x - flare, ground);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = COLORS.cream;
+  ctx.fillRect(tower.x + 16, top, 14, ground - top);
+  // Two little windows, and the doorway the ball rolls through.
+  ctx.fillStyle = "#8FB2FF";
+  for (const y of [tower.y + tower.h - 150, tower.y + tower.h - 70]) {
+    if (y < top) continue;
+    roundRect(ctx, tower.x + tower.w / 2 - 12, y, 24, 30, 12);
+    ctx.fill();
+  }
+  const door = { w: 64, h: 70 };
+  ctx.fillStyle = "#0B1430";
+  ctx.beginPath();
+  ctx.moveTo(tower.x + tower.w / 2 - door.w / 2, ground);
+  ctx.lineTo(tower.x + tower.w / 2 - door.w / 2, ground - door.h + door.w / 2);
+  ctx.arc(tower.x + tower.w / 2, ground - door.h + door.w / 2, door.w / 2, Math.PI, 0);
+  ctx.lineTo(tower.x + tower.w / 2 + door.w / 2, ground);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawWindmill(ctx: CanvasRenderingContext2D, mill: Windmill, angle: number) {
+  for (let i = 0; i < mill.blades; i++) {
+    const a = angle + (i * Math.PI * 2) / mill.blades;
+    ctx.save();
+    ctx.translate(mill.x, mill.y);
+    ctx.rotate(a);
+    // A sail: a plastic lattice paddle on a spar.
+    ctx.fillStyle = COLORS.sailLip;
+    roundRect(ctx, 14, -9, mill.arm - 14, 18, 7);
+    ctx.fill();
+    ctx.fillStyle = COLORS.sail;
+    roundRect(ctx, 14, -8, mill.arm - 16, 15, 6);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 2;
+    for (let x = 34; x < mill.arm - 8; x += 22) {
+      ctx.beginPath();
+      ctx.moveTo(x, -6);
+      ctx.lineTo(x, 6);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.fillStyle = COLORS.flag;
+  ctx.beginPath();
+  ctx.arc(mill.x, mill.y, 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.beginPath();
+  ctx.arc(mill.x - 5, mill.y - 5, 5, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -102,8 +248,13 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Point) {
 }
 
 export function drawFrame(ctx: CanvasRenderingContext2D, frame: Frame) {
-  const { hole, ball, platformX, aim, ready, time } = frame;
+  const { hole, ball, platformX, windmillAngle, aim, ready, time } = frame;
   ctx.clearRect(-200, -200, WORLD.width + 400, WORLD.height + 400);
+
+  for (const zone of hole.wind ?? []) drawWind(ctx, zone, time);
+  // With a windmill, the block above its hub is its tower, drawn behind the sails.
+  const tower = hole.windmill ? (hole.walls ?? []).find((w) => w.y < 0 && hole.windmill!.x > w.x && hole.windmill!.x < w.x + w.w) : undefined;
+  if (tower) drawTower(ctx, tower, hole.tee.y + BALL_RADIUS);
 
   for (const water of hole.water ?? []) {
     ctx.fillStyle = COLORS.water;
@@ -115,7 +266,11 @@ export function drawFrame(ctx: CanvasRenderingContext2D, frame: Frame) {
   }
 
   for (const island of hole.islands) drawIsland(ctx, island);
-  drawCupAndFlag(ctx, hole.cup, time);
+  for (const zone of hole.sand ?? []) drawSand(ctx, zone);
+  const roof = (hole.walls ?? []).filter((w) => w.x < hole.cup.x && w.x + w.w > hole.cup.x && w.y + w.h < hole.cup.y);
+  drawCupAndFlag(ctx, hole.cup, time, roof.length ? Math.max(...roof.map((w) => w.y + w.h)) : null);
+  for (const wall of hole.walls ?? []) if (wall !== tower) drawBlock(ctx, wall);
+  if (hole.windmill && windmillAngle !== null) drawWindmill(ctx, hole.windmill, windmillAngle);
 
   for (const pad of hole.bouncePads ?? []) {
     ctx.fillStyle = COLORS.pad;

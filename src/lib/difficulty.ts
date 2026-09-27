@@ -14,7 +14,7 @@ const PRESETS = {
   marbleRun: { easy: { level: 2 }, medium: { level: 3 }, hard: { level: 4 } },
   trainTrack: { easy: { gridSize: 4 }, medium: { gridSize: 5 }, hard: { gridSize: 6 } },
   memoryMatch: { easy: { pairs: 8 }, medium: { pairs: 10 }, hard: { pairs: 12 } },
-  flickGolf: { easy: { holes: 2 }, medium: { holes: 3 }, hard: { holes: 4 } },
+  flickGolf: { easy: { holes: 4 }, medium: { holes: 6 }, hard: { holes: 9 } },
   countingLock: { easy: { digits: 2 }, medium: { digits: 3 }, hard: { digits: 3 } },
 } as const;
 

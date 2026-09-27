@@ -8,7 +8,7 @@ import type { PuzzleProps } from "../types";
 import { useElementSize } from "../useElementSize";
 import { WORLD, holesFor, type Point } from "./holes";
 import { drawFrame } from "./render";
-import { MAX_SPEED, POWER, TICK_MS, createWorld, isAtRest, platformX, predictPath, shoot, step, type GolfWorld } from "./world";
+import { MAX_SPEED, POWER, TICK_MS, createWorld, isAtRest, platformX, predictPath, shoot, step, windmillAngle, windmillPeriod, type GolfWorld } from "./world";
 
 /** How far you can pull back (beyond this the shot is already at full power). */
 const MAX_PULL = MAX_SPEED / POWER;
@@ -93,6 +93,8 @@ export function FlickGolf({ config, onSolved, onAttemptFailed, onProgress, hintR
 
       const ctx = canvas.current?.getContext("2d");
       if (ctx && canvas.current) {
+        // For the E2E solver's windmill timing; set directly, so it costs no re-render.
+        canvas.current.dataset.tick = String(w.tick);
         const dpr = window.devicePixelRatio || 1;
         ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
         const pull = aim.current?.pull;
@@ -100,6 +102,7 @@ export function FlickGolf({ config, onSolved, onAttemptFailed, onProgress, hintR
           hole,
           ball: w.ball.position,
           platformX: platformX(w),
+          windmillAngle: hole.windmill ? windmillAngle(hole.windmill, w.tick) : null,
           aim: pull ? { pull, dots: predictPath(w.ball.position, pull, hintArmed.current ? HINT_AIM_TICKS : SHORT_AIM_TICKS) } : null,
           ready: isAtRest(w) && !pull,
           time: now,
@@ -176,6 +179,7 @@ export function FlickGolf({ config, onSolved, onAttemptFailed, onProgress, hintR
           data-at-rest={atRest}
           data-scale={scale}
           data-test-shot={`${hole.testShot.x},${hole.testShot.y}`}
+          data-test-phase={hole.testShot.phase && hole.windmill ? `${windmillPeriod(hole.windmill)},${hole.testShot.phase[0]},${hole.testShot.phase[1]}` : undefined}
           data-tee={`${hole.tee.x},${hole.tee.y}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

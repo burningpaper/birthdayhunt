@@ -156,3 +156,19 @@ Its old random number generator also turned out to cycle, printing the same leve
 ## 2026-09-26 — A 15-piece jigsaw
 
 The parent asked for 15 pieces. It isn't square, but it's a tidy 5 × 3 (3 × 5 for a portrait photo), which on a normal 4:3 iPad photo gives nearly square pieces. Fifteen is now the Medium default. Hard moved up to 20 (5 × 4, with pieces starting rotated) so it stays harder than Medium, and 6, 9, 12 and 16 remain valid, so no stored hunt breaks. The loose-piece layout already packs pieces in one or two columns either side of the board; its existing test (no piece on the board, no two pieces more than 30% overlapping) now covers 15 and 20 at four photo shapes, and both sizes were screenshotted and solved by drag at iPad size. Stations keep the piece count they were saved with, so an existing jigsaw only changes when the parent picks 15 in setup.
+
+## 2026-09-27 — Flick Golf: twelve holes and real obstacles
+
+The parent asked for more holes and harder courses, with obstacles arriving later on. They chose a 12-hole course (Easy 4, Medium 6, Hard 9, up to all 12 in setup via a dropdown) and three kinds of obstacle: a windmill, walls with low roofs, and sand with wind.
+
+The physics grew four mechanics:
+- **Walls and roofs** are chamfered static blocks.
+- **Sand** keeps 80% of the ball's speed each tick it's inside, so a rolling ball dies in a few ticks.
+- **Wind** adds a push to the ball's velocity every tick it's inside.
+- **The windmill** is one compound body whose angle is set from the tick, with a matching spin so a blade *bats* the ball rather than just blocking it.
+
+It's defined by a whole-number **period** (ticks until the next blade takes the same place), not a speed. With a speed, the true period was about 44.9 ticks, and a timing window would slowly drift out of step over a long wait.
+
+Holes were designed by measurement again. `e2e-scratch/golf/course.test.ts` fires about 1,100 shots per hole (times several release moments on windmill holes), reports the share that sink, and draws the best shot's flight. Those numbers caught three bad first drafts. A lob sailed over the windmill's roof, rolled along the top and dropped in; the fix is a tower tall enough to reach off the top of the screen, so the only way is under the sails. The finale's blades spun the helpful way and carried the ball in. And the headwind was too gentle to trouble a lob. The final course runs from 15.6% of shots sinking on the warm-up to 0.6% on the finale, with the new holes woven between the old ones.
+
+Then a lesson about stored shots. The first end-to-end run missed on "The wall", a hole the unit test sank every time. In the real game the ball settles on its tee for a moment and the finger lands on whole pixels, so the real shot is a fraction off the stored one. Each hole's stored shot is now the one that survives nudges of ±1.5 units (±0.75 for windmill holes) after the ball has settled, and a unit test holds every hole to that. For the windmill, the E2E solver does what a child would. It pulls back, holds, and lets go when the course's tick (published as a `data-` attribute, set directly so it costs no re-render) is inside the stored window. Both windmills were also slowed down, which widened those windows and makes the timing kinder for a seven-year-old. A new end-to-end test plays all twelve holes through the real UI.

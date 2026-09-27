@@ -11,7 +11,7 @@ describe("difficulty presets", () => {
     expect(defaultPuzzle("marbleRun", "medium")).toEqual({ type: "marbleRun", level: 3 });
     expect(defaultPuzzle("trainTrack", "medium")).toEqual({ type: "trainTrack", gridSize: 5 });
     expect(defaultPuzzle("memoryMatch", "medium")).toEqual({ type: "memoryMatch", pairs: 10 });
-    expect(defaultPuzzle("flickGolf", "medium")).toEqual({ type: "flickGolf", holes: 3 });
+    expect(defaultPuzzle("flickGolf", "medium")).toEqual({ type: "flickGolf", holes: 6 });
     expect(defaultPuzzle("countingLock", "medium")).toMatchObject({ type: "countingLock", digits: 3 });
   });
 

@@ -4,7 +4,8 @@ import { withLockDigits } from "@/lib/difficulty";
 import type { LockQuestion, PuzzleConfig } from "@/lib/schema";
 import type { MediaMode } from "@/lib/uploadClient";
 import { CardPhotosField } from "./CardPhotosField";
-import { Field, Segmented, TextInput, Toggle } from "./ui";
+import { HOLES } from "@/puzzles/golf/holes";
+import { Field, Segmented, Select, TextInput, Toggle } from "./ui";
 import { VoiceRecorder } from "./VoiceRecorder";
 
 type Props = { puzzle: PuzzleConfig; mediaMode: MediaMode; onChange: (puzzle: PuzzleConfig) => void };
@@ -34,7 +35,17 @@ export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
         </div>
       );
     case "flickGolf":
-      return <Segmented label="Holes" options={numbers([1, 2, 3, 4, 5] as const).map((o) => ({ ...o, label: o.value === 1 ? "1 hole" : `${o.value} holes` }))} value={puzzle.holes} onChange={(holes) => onChange({ ...puzzle, holes })} />;
+      return (
+        <Field label="Holes" hint={`Plays the course from the start. Later holes add sand, wind, walls and a windmill; the last is "${HOLES[puzzle.holes - 1].name}".`}>
+          <Select value={puzzle.holes} onChange={(e) => onChange({ ...puzzle, holes: Number(e.target.value) })}>
+            {HOLES.map((hole, i) => (
+              <option key={hole.name} value={i + 1}>
+                {i === 0 ? "1 hole" : `${i + 1} holes`} (up to {hole.name})
+              </option>
+            ))}
+          </Select>
+        </Field>
+      );
     case "countingLock":
       return <LockOptions puzzle={puzzle} mediaMode={mediaMode} onChange={onChange} />;
   }

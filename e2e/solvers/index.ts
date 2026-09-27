@@ -127,6 +127,20 @@ export async function solveGolf(page: Page) {
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
     await page.mouse.move(from.x + pullX * scale, from.y + pullY * scale, { steps: 8 });
+    // A windmill: hold the aim, and let go when the blades are where the stored shot needs them.
+    const phase = await course.getAttribute("data-test-phase");
+    if (phase) {
+      const [period, lo, hi] = phase.split(",").map(Number);
+      const mid = Math.round((lo + hi) / 2);
+      await page.waitForFunction(
+        ([p, m]) => {
+          const tick = Number(document.querySelector<HTMLCanvasElement>("canvas.golf-course")?.dataset.tick ?? -1);
+          return (((tick - m) % p) + p) % p <= 1 || (((m - tick) % p) + p) % p <= 1;
+        },
+        [period, mid - 1] as const,
+        { polling: "raf" },
+      );
+    }
     await page.mouse.up();
     if (hole < holes - 1) await expect(course).toHaveAttribute("data-hole", String(hole + 1), { timeout: 15_000 });
   }

@@ -9,6 +9,15 @@
  */
 
 export type Point = { x: number; y: number };
+export type Rect = { x: number; y: number; w: number; h: number };
+
+/**
+ * Spinning blades on a hub; a blade pointing down blocks the way. `period` is
+ * how many ticks until the next blade takes the same place (a whole number,
+ * so the pattern repeats exactly); the blades turn clockwise on screen, so
+ * the lowest one sweeps back towards the tee.
+ */
+export type Windmill = { x: number; y: number; arm: number; blades: number; period: number };
 
 export type Hole = {
   name: string;
@@ -20,7 +29,18 @@ export type Hole = {
   bouncePads?: { x: number; y: number; w: number }[];
   /** A plank that slides back and forth between two x positions. */
   movingPlatform?: { y: number; w: number; fromX: number; toX: number; speed: number };
-  testShot: Point;
+  /** Solid plastic blocks: walls to lob over, low roofs to skim under. */
+  walls?: Rect[];
+  /** Sand traps: the ball slows right down inside one. */
+  sand?: Rect[];
+  /** Wind: while the ball is inside, `push` is added to its velocity every tick. */
+  wind?: (Rect & { push: Point })[];
+  windmill?: Windmill;
+  /**
+   * A known sinking shot from the tee: the pull-back, and for holes with a
+   * windmill, the ticks (counted within one blade's turn) when releasing it works.
+   */
+  testShot: Point & { phase?: [number, number] };
 };
 
 export const WORLD = { width: 1000, height: 560 };
@@ -47,7 +67,7 @@ export const HOLES: Hole[] = [
     tee: { x: 140, y: 440 - BALL_RADIUS },
     cup: { x: 760, y: 440 },
     islands: [withCup([{ x: -100, y: 440 }, { x: 1100, y: 440 }], 760, 440)],
-    testShot: { x: -77, y: 67 },
+    testShot: { x: -162, y: 0 },
   },
   {
     name: "Over the hill",
@@ -67,7 +87,7 @@ export const HOLES: Hole[] = [
         440,
       ),
     ],
-    testShot: { x: -69, y: 95 },
+    testShot: { x: -162, y: 9 },
   },
   {
     name: "Mind the gap",
@@ -89,7 +109,36 @@ export const HOLES: Hole[] = [
         450,
       ),
     ],
-    testShot: { x: -65, y: 113 },
+    testShot: { x: -117, y: 78 },
+  },
+  {
+    name: "Sand trap",
+    tee: { x: 120, y: 440 - BALL_RADIUS },
+    cup: { x: 820, y: 440 },
+    islands: [
+      withCup(
+        [
+          { x: -100, y: 440 },
+          { x: 520, y: 440 },
+          { x: 545, y: 462 },
+          { x: 735, y: 462 },
+          { x: 760, y: 440 },
+          { x: 1100, y: 440 },
+        ],
+        820,
+        440,
+      ),
+    ],
+    sand: [{ x: 525, y: 400, w: 230, h: 66 }],
+    testShot: { x: -102, y: 96 },
+  },
+  {
+    name: "The wall",
+    tee: { x: 120, y: 440 - BALL_RADIUS },
+    cup: { x: 800, y: 440 },
+    islands: [withCup([{ x: -100, y: 440 }, { x: 1100, y: 440 }], 800, 440)],
+    walls: [{ x: 460, y: 240, w: 44, h: 200 }],
+    testShot: { x: -93, y: 105 },
   },
   {
     name: "Splash and bounce",
@@ -111,7 +160,29 @@ export const HOLES: Hole[] = [
     ],
     water: [{ x: 380, y: 470, w: 240, h: 50 }],
     bouncePads: [{ x: 250, y: 440, w: 70 }],
-    testShot: { x: -66, y: 124 },
+    testShot: { x: -102, y: 102 },
+  },
+  {
+    name: "Under the roof",
+    tee: { x: 110, y: 440 - BALL_RADIUS },
+    cup: { x: 820, y: 440 },
+    islands: [
+      withCup(
+        [
+          { x: -100, y: 440 },
+          { x: 340, y: 440 },
+          { x: 360, y: 460 },
+          { x: 500, y: 460 },
+          { x: 520, y: 440 },
+          { x: 1100, y: 440 },
+        ],
+        820,
+        440,
+      ),
+    ],
+    sand: [{ x: 345, y: 400, w: 170, h: 64 }],
+    walls: [{ x: 580, y: 334, w: 440, h: 24 }],
+    testShot: { x: -93, y: 66 },
   },
   {
     name: "The moving bridge",
@@ -134,7 +205,82 @@ export const HOLES: Hole[] = [
       ),
     ],
     movingPlatform: { y: 420, w: 120, fromX: 420, toX: 640, speed: 1.4 },
-    testShot: { x: -92, y: 136 },
+    testShot: { x: -162, y: 108 },
+  },
+  {
+    name: "Headwind",
+    tee: { x: 110, y: 440 - BALL_RADIUS },
+    cup: { x: 820, y: 440 },
+    islands: [
+      [
+        { x: -100, y: 440 },
+        { x: 380, y: 440 },
+        { x: 380, y: 700 },
+      ],
+      withCup(
+        [
+          { x: 600, y: 700 },
+          { x: 600, y: 440 },
+          { x: 1100, y: 440 },
+        ],
+        820,
+        440,
+      ),
+    ],
+    wind: [{ x: 200, y: -400, w: 700, h: 700, push: { x: -0.16, y: 0 } }],
+    testShot: { x: -162, y: 114 },
+  },
+  {
+    name: "The windmill",
+    tee: { x: 120, y: 440 - BALL_RADIUS },
+    cup: { x: 860, y: 440 },
+    islands: [withCup([{ x: -100, y: 440 }, { x: 1100, y: 440 }], 860, 440)],
+    windmill: { x: 620, y: 300, arm: 134, blades: 4, period: 60 },
+    walls: [
+      // The windmill's tower: too tall to lob over, so the only way is under the turning blades.
+      { x: 560, y: -400, w: 120, h: 640 },
+      // A low backstop behind the cup: getting through is the test, not judging the roll after.
+      { x: 910, y: 400, w: 30, h: 40 },
+    ],
+    testShot: { x: -144, y: 27, phase: [49, 59] },
+  },
+  {
+    name: "Over and under",
+    tee: { x: 110, y: 440 - BALL_RADIUS },
+    cup: { x: 840, y: 440 },
+    islands: [withCup([{ x: -100, y: 440 }, { x: 1100, y: 440 }], 840, 440)],
+    walls: [
+      { x: 360, y: 290, w: 40, h: 150 },
+      { x: 580, y: 330, w: 440, h: 24 },
+    ],
+    testShot: { x: -78, y: 90 },
+  },
+  {
+    name: "The grand finale",
+    tee: { x: 90, y: 440 - BALL_RADIUS },
+    cup: { x: 900, y: 440 },
+    islands: [
+      withCup(
+        [
+          { x: -100, y: 440 },
+          { x: 260, y: 440 },
+          { x: 280, y: 462 },
+          { x: 420, y: 462 },
+          { x: 440, y: 440 },
+          { x: 1100, y: 440 },
+        ],
+        900,
+        440,
+      ),
+    ],
+    sand: [{ x: 265, y: 400, w: 170, h: 66 }],
+    wind: [{ x: 440, y: -200, w: 340, h: 520, push: { x: -0.06, y: 0 } }],
+    windmill: { x: 700, y: 300, arm: 134, blades: 4, period: 54 },
+    walls: [
+      { x: 640, y: -400, w: 120, h: 640 },
+      { x: 950, y: 400, w: 30, h: 40 },
+    ],
+    testShot: { x: -162, y: 45, phase: [40, 48] },
   },
 ];
 

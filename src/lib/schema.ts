@@ -60,7 +60,7 @@ export const PuzzleConfigSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("flickGolf"),
-    holes: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    holes: z.number().int().min(1).max(12),
   }),
   z.object({
     type: z.literal("countingLock"),

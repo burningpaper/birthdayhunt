@@ -3,7 +3,7 @@ import { solveGolf } from "./solvers";
 
 /** Flick Golf, played through the real drag-and-release UI. */
 
-test("a three-hole golf station can be played to the celebration", async ({ page }) => {
+test("a six-hole golf station (the Medium default) can be played to the celebration", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/setup/login");
   await page.getByLabel("Parent PIN").fill("2468");
@@ -12,11 +12,11 @@ test("a three-hole golf station can be played to the celebration", async ({ page
   const { hunt } = await (await page.request.post("/api/setup/hunts", { data: { title: "Golf" } })).json();
   const station = hunt.stations.find((s: { puzzle: { type: string } }) => s.puzzle.type === "flickGolf");
   expect(station, "new hunts include a golf station").toBeTruthy();
-  expect(station.puzzle.holes).toBe(3);
+  expect(station.puzzle.holes).toBe(6);
 
   await page.goto(`/h/${hunt.id}/s/${station.id}?k=${station.key}&preview=1`);
   await page.getByRole("button", { name: "Tap to start!" }).click();
-  await expect(page.getByText("Hole 1 of 3")).toBeVisible();
+  await expect(page.getByText("Hole 1 of 6")).toBeVisible();
   await solveGolf(page);
   await expect(page.getByText("You did it!")).toBeVisible({ timeout: 15_000 });
 });
@@ -42,4 +42,22 @@ test("a tiny accidental tug on the ball doesn't take a shot", async ({ page }) =
   await page.mouse.up();
   await page.waitForTimeout(300);
   await expect(course).toHaveAttribute("data-at-rest", "true");
+});
+
+test("the whole twelve-hole course, windmills included, can be played by timing the shots", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/setup/login");
+  await page.getByLabel("Parent PIN").fill("2468");
+  await page.getByRole("button", { name: "Unlock" }).click();
+  await expect(page.getByRole("heading", { name: "Your hunts" })).toBeVisible();
+  const { hunt } = await (await page.request.post("/api/setup/hunts", { data: { title: "Golf course" } })).json();
+  const station = hunt.stations.find((s: { puzzle: { type: string } }) => s.puzzle.type === "flickGolf");
+  station.puzzle = { type: "flickGolf", holes: 12 };
+  expect((await page.request.put(`/api/setup/hunts/${hunt.id}`, { data: hunt })).ok()).toBe(true);
+
+  await page.goto(`/h/${hunt.id}/s/${station.id}?k=${station.key}&preview=1`);
+  await page.getByRole("button", { name: "Tap to start!" }).click();
+  await expect(page.getByText("Hole 1 of 12")).toBeVisible();
+  await solveGolf(page);
+  await expect(page.getByText("You did it!")).toBeVisible({ timeout: 15_000 });
 });
