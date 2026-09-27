@@ -47,7 +47,10 @@ export const PuzzleConfigSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("marbleRun"),
+    /** The first level played. */
     level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    /** How many levels in a row, from `level` on. Stations saved before this existed play just one. */
+    levels: z.number().int().min(1).max(5).optional(),
   }),
   z.object({
     type: z.literal("trainTrack"),

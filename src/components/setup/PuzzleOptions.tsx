@@ -24,7 +24,28 @@ export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
         </div>
       );
     case "marbleRun":
-      return <Segmented label="Level" options={numbers([1, 2, 3, 4, 5] as const).map((o) => ({ ...o, label: `Level ${o.value}` }))} value={puzzle.level} onChange={(level) => onChange({ ...puzzle, level })} />;
+      return (
+        <div className="flex flex-wrap items-end gap-6">
+          <Field label="Start at">
+            <Segmented
+              label="Start at"
+              options={numbers([1, 2, 3, 4, 5] as const).map((o) => ({ ...o, label: `Level ${o.value}` }))}
+              value={puzzle.level}
+              // Keep the run inside the five levels.
+              onChange={(level) => onChange({ ...puzzle, level, levels: Math.min(puzzle.levels ?? 1, 6 - level) })}
+            />
+          </Field>
+          <Field label="Levels in a row">
+            <Select value={puzzle.levels ?? 1} onChange={(e) => onChange({ ...puzzle, levels: Number(e.target.value) })}>
+              {Array.from({ length: 6 - puzzle.level }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n === 1 ? `Just level ${puzzle.level}` : `${n} levels (${puzzle.level} to ${puzzle.level + n - 1})`}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      );
     case "trainTrack":
       return <Segmented label="Grid size" options={([4, 5, 6] as const).map((v) => ({ value: v, label: `${v} × ${v}` }))} value={puzzle.gridSize} onChange={(gridSize) => onChange({ ...puzzle, gridSize })} />;
     case "memoryMatch":

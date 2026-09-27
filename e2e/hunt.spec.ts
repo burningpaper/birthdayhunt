@@ -34,8 +34,8 @@ async function solveStation(page: Page, hunt: Hunt, index: number) {
 }
 
 test("a parent builds a hunt and a child plays it end to end", async ({ page, browser }) => {
-  // Six real puzzles, played through the UI (the train ride alone takes a few seconds).
-  test.setTimeout(120_000);
+  // Six real puzzles, played through the UI (the train ride alone takes a few seconds, the marble run plays four levels).
+  test.setTimeout(180_000);
   await signIn(page);
 
   // Create a hunt and give station 1 a real photo through the UI.

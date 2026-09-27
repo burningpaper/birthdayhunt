@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { useHydrated } from "@/components/useHydrated";
 import type { PuzzleConfig } from "@/lib/schema";
-import { MarbleRun3d } from "./MarbleRun3d";
+import { MarbleBoard } from "./MarbleRun3d";
 
 /**
  * The marble run's free-build extra (spec §6.2): after solving, keep
@@ -43,7 +43,7 @@ export function KeepBuilding({ config }: { config: PuzzleConfig }) {
                     <X weight="bold" size={30} />
                   </PlasticButton>
                 </div>
-                <MarbleRun3d config={config} difficulty="medium" hintRequest={0} onSolved={noop} sandbox />
+                <MarbleBoard levelNumber={config.type === "marbleRun" ? config.level : 1} hintRequest={0} onSolved={noop} sandbox />
               </motion.div>
             )}
           </AnimatePresence>,

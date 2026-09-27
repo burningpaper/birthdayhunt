@@ -28,6 +28,25 @@ for (const level of [1, 3, 5]) {
   });
 }
 
+test("a Medium station (the default) plays four levels in a row, then unlocks the clue", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/setup/login");
+  await page.getByLabel("Parent PIN").fill("2468");
+  await page.getByRole("button", { name: "Unlock" }).click();
+  await expect(page.getByRole("heading", { name: "Your hunts" })).toBeVisible();
+  const { hunt } = await (await page.request.post("/api/setup/hunts", { data: { title: "Marble run of levels" } })).json();
+  const station = hunt.stations.find((s: { puzzle: { type: string } }) => s.puzzle.type === "marbleRun");
+  expect(station.puzzle).toEqual({ type: "marbleRun", level: 1, levels: 4 });
+  station.clue = { photoUrl: "/x.jpg", showText: false };
+  expect((await page.request.put(`/api/setup/hunts/${hunt.id}`, { data: hunt })).ok()).toBe(true);
+
+  await page.goto(`/h/${hunt.id}/s/${station.id}?k=${station.key}&preview=1`);
+  await page.getByRole("button", { name: "Tap to start!" }).click();
+  await expect(page.getByRole("status", { name: "Level 1 of 4" })).toBeVisible();
+  await solveMarble(page);
+  await expect(page.getByText("You did it!")).toBeVisible({ timeout: 20_000 });
+});
+
 test("each star the marble rolls through lights up on the counter", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto(await marbleStation(page, 3));

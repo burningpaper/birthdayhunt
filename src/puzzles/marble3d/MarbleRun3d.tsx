@@ -7,7 +7,7 @@ import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { boing, snap, tock, twinkle } from "@/lib/audio/sfx";
 import type { PuzzleProps } from "../types";
 import { simulate, type RunEvent } from "./engine";
-import { LEVELS, level as buildLevel, type Level, type Placed } from "./levels";
+import { LEVELS, level as buildLevel, stationLevels, type Level, type Placed } from "./levels";
 import { LIFT_PX } from "./constants";
 import { PieceIcon3d } from "./PieceIcon3d";
 import { hintPiece, winningRoutes } from "./routes";
@@ -35,14 +35,48 @@ function freeBuild(base: Level): Level {
 }
 
 /**
- * Marble Run (spec §6.2), in 3D. Plan a route from the tube to the bucket:
- * drag pieces from the tray onto any free square of the board, tap a
- * placed piece to turn it, then press GO. The marble rolls
- * the run you built; a miss flies off, bounces away and a new marble drops
- * into the tube, with every piece left where it was.
+ * Marble Run (spec §6.2): a station plays one or more levels in a row, like
+ * golf's holes, and is solved when the last one is. Each level starts on a
+ * fresh board.
  */
-export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hintRequest, sandbox = false }: PuzzleProps & { sandbox?: boolean }) {
-  const levelNumber = config.type === "marbleRun" ? config.level : 1;
+export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hintRequest }: PuzzleProps) {
+  const levels = useMemo(() => stationLevels(config), [config]);
+  const [index, setIndex] = useState(0);
+  const last = index === levels.length - 1;
+  const progress = useMemo(() => (levels.length > 1 ? { index, total: levels.length } : undefined), [index, levels.length]);
+  return (
+    <MarbleBoard
+      key={levels[index]}
+      levelNumber={levels[index]}
+      progress={progress}
+      hintRequest={hintRequest}
+      onAttemptFailed={onAttemptFailed}
+      onProgress={onProgress}
+      onSolved={() => {
+        onProgress?.();
+        if (last) onSolved();
+        else setIndex((i) => i + 1);
+      }}
+    />
+  );
+}
+
+type BoardProps = Pick<PuzzleProps, "onSolved" | "onAttemptFailed" | "onProgress" | "hintRequest"> & {
+  levelNumber: number;
+  /** Free build: a bare board with endless pieces, never "solved". */
+  sandbox?: boolean;
+  /** Where this level sits in a run of several, for the "Level 2 of 4" counter. */
+  progress?: { index: number; total: number };
+};
+
+/**
+ * One marble run level, in 3D. Plan a route from the tube to the bucket:
+ * drag pieces from the tray onto any free square of the board, tap a
+ * placed piece to turn it, then press GO. The marble rolls the run you
+ * built; a miss flies off, bounces away and a new marble drops into the
+ * tube, with every piece left where it was.
+ */
+export function MarbleBoard({ levelNumber, onSolved, onAttemptFailed, onProgress, hintRequest, sandbox = false, progress }: BoardProps) {
   const level = useMemo(() => (sandbox ? freeBuild(LEVELS[levelNumber - 1]) : LEVELS[levelNumber - 1]), [levelNumber, sandbox]);
   // The tray is one button per piece type, with how many are left. Free build never runs out.
   const trayTypes = useMemo(() => PIECE_TYPES.filter((t) => sandbox || level.tray.includes(t)), [level, sandbox]);
@@ -173,8 +207,8 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
     if (!finished) return;
     if (finished.result === "cup" && !sandbox) {
       setPhase("solved");
-      setMessage("In the bucket!");
-      setTimeout(() => callbacks.current.onSolved(), 900);
+      setMessage(progress && progress.index < progress.total - 1 ? `Level ${progress.index + 1} done!` : "In the bucket!");
+      setTimeout(() => callbacks.current.onSolved(), progress ? 1400 : 900);
       return;
     }
     if (finished.result === "cup") setMessage("In the bucket!");
@@ -194,7 +228,7 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
       setSpawnedAt(performance.now());
       setPhase("build");
     }, RESET_MS);
-  }, [sandbox]);
+  }, [sandbox, progress]);
 
   // How many of a type are still in the tray. A type that runs out stays (faded) rather than
   // vanishing: iPad Safari ends a touch whose element is removed mid-touch.
@@ -208,6 +242,8 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
       onPointerUp={onPointerUp}
       onPointerCancel={() => setDrag(null)}
       data-level={levelNumber}
+      data-level-index={progress?.index ?? 0}
+      data-levels={progress?.total ?? 1}
       data-phase={phase}
     >
       <div className="marble-scene relative min-h-0 flex-1" role="img" aria-label={`Marble run, level ${levelNumber}: ${level.name}`}>
@@ -245,9 +281,21 @@ export function MarbleRun3d({ config, onSolved, onAttemptFailed, onProgress, hin
             );
           })}
 
+        {progress && (
+          <div className="pointer-events-none absolute top-2 left-4 z-10 flex items-center gap-3" role="status" aria-label={`Level ${progress.index + 1} of ${progress.total}`}>
+            <span className="plastic plastic-cobalt flex items-center gap-2 px-4 py-2 font-display text-2xl">
+              Level {progress.index + 1} of {progress.total}
+            </span>
+            <span className="flex gap-1.5" aria-hidden>
+              {Array.from({ length: progress.total }, (_, i) => (
+                <span key={i} className={`size-3.5 rounded-full ${i < progress.index ? "bg-grass" : i === progress.index ? "bg-sunflower" : "bg-cream/25"}`} />
+              ))}
+            </span>
+          </div>
+        )}
         {level.stars.length > 0 && (
           <div
-            className="pointer-events-none absolute top-2 left-4 z-10 flex items-center gap-1 rounded-full bg-toybox/70 px-3 py-2"
+            className={`pointer-events-none absolute ${progress ? "top-16" : "top-2"} left-4 z-10 flex items-center gap-1 rounded-full bg-toybox/70 px-3 py-2`}
             role="status"
             aria-label={`${starsCollected} of ${level.stars.length} stars collected`}
             data-stars={starsCollected}

@@ -1,3 +1,4 @@
+import type { PuzzleConfig } from "@/lib/schema";
 import type { CellRef, PieceType } from "./track";
 
 /**
@@ -206,3 +207,10 @@ export const LEVELS: Level[] = [
     ],
   }),
 ];
+
+/** The levels a station plays, in order: from its first level, as many in a row as it asks for (never past the last). */
+export function stationLevels(config: PuzzleConfig): number[] {
+  if (config.type !== "marbleRun") return [1];
+  const count = Math.max(1, Math.min(config.levels ?? 1, LEVELS.length - config.level + 1));
+  return Array.from({ length: count }, (_, i) => config.level + i);
+}

@@ -163,11 +163,17 @@ export async function placeMarblePiece(root: Page | Locator, page: Page, want: P
   await expect(cell).toHaveAttribute("data-turns", String(want.turns));
 }
 
+/** Solve every level of a marble run station in turn (a station can play several in a row). */
 export async function solveMarble(page: Page) {
   const run = page.locator("div.marble-run");
-  const level = LEVELS[Number(await run.getAttribute("data-level")) - 1];
-  for (const want of level.solution) await placeMarblePiece(page, page, want);
-  await page.getByRole("button", { name: "GO: drop the marble" }).click();
+  const total = Number(await run.getAttribute("data-levels"));
+  for (let i = 0; i < total; i++) {
+    await expect(run).toHaveAttribute("data-level-index", String(i), { timeout: 15_000 });
+    await expect(run).toHaveAttribute("data-phase", "build");
+    const level = LEVELS[Number(await run.getAttribute("data-level")) - 1];
+    for (const want of level.solution) await placeMarblePiece(page, page, want);
+    await page.getByRole("button", { name: "GO: drop the marble" }).click();
+  }
 }
 
 /** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */

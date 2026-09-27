@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { simulate } from "./engine";
-import { LEVELS } from "./levels";
+import { LEVELS, stationLevels } from "./levels";
 import { distinctPaths, hintPiece, shortestPathLength, winningRoutes } from "./routes";
 
 const cellKey = (c: { col: number; row: number }) => `${c.col},${c.row}`;
@@ -66,5 +66,20 @@ describe("the levels together", () => {
     const built = level.solution.slice(0, 3);
     const route = routes.find((r) => built.every((b) => r.some((p) => cellKey(p) === cellKey(b) && p.type === b.type && p.turns === b.turns)))!;
     expect(hintPiece(routes, built)).toEqual(route.find((p) => !built.some((b) => cellKey(b) === cellKey(p))));
+  });
+});
+
+describe("a station's levels", () => {
+  it("plays from its first level, as many in a row as it asks for", () => {
+    expect(stationLevels({ type: "marbleRun", level: 1, levels: 4 })).toEqual([1, 2, 3, 4]);
+    expect(stationLevels({ type: "marbleRun", level: 2, levels: 4 })).toEqual([2, 3, 4, 5]);
+  });
+
+  it("plays just the one level for a station saved before runs of levels existed", () => {
+    expect(stationLevels({ type: "marbleRun", level: 3 })).toEqual([3]);
+  });
+
+  it("never runs past the last level", () => {
+    expect(stationLevels({ type: "marbleRun", level: 4, levels: 5 })).toEqual([4, 5]);
   });
 });

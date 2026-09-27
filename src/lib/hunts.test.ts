@@ -8,7 +8,7 @@ import { clueTargetLabel, huntProblems } from "./validation";
 describe("difficulty presets", () => {
   it("uses the spec's age-7 defaults at medium", () => {
     expect(defaultPuzzle("jigsaw", "medium")).toEqual({ type: "jigsaw", pieces: 15, rotation: false });
-    expect(defaultPuzzle("marbleRun", "medium")).toEqual({ type: "marbleRun", level: 3 });
+    expect(defaultPuzzle("marbleRun", "medium")).toEqual({ type: "marbleRun", level: 1, levels: 4 });
     expect(defaultPuzzle("trainTrack", "medium")).toEqual({ type: "trainTrack", gridSize: 5 });
     expect(defaultPuzzle("memoryMatch", "medium")).toEqual({ type: "memoryMatch", pairs: 10 });
     expect(defaultPuzzle("flickGolf", "medium")).toEqual({ type: "flickGolf", holes: 6 });
@@ -102,7 +102,7 @@ describe("hunt factory", () => {
     const hard = setHuntDifficulty(newHunt("Birthday"), "hard");
     expect(hard.difficulty).toBe("hard");
     expect(hard.stations[0].puzzle).toEqual({ type: "jigsaw", pieces: 20, rotation: true });
-    expect(hard.stations[1].puzzle).toEqual({ type: "marbleRun", level: 4 });
+    expect(hard.stations[1].puzzle).toEqual({ type: "marbleRun", level: 2, levels: 4 });
   });
 
   it("never starts a new station with a puzzle setup isn't offering", () => {
