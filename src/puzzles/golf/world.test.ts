@@ -1,7 +1,7 @@
 import Matter from "matter-js";
 import { describe, expect, it } from "vitest";
-import { HOLES, holesFor, type Point } from "./holes";
-import { MAX_SPEED, createWorld, launchVelocity, platformX, predictPath, shoot, simulateShot, step, windmillPeriod } from "./world";
+import { HOLES, WORLD, holesFor, type Point } from "./holes";
+import { MAX_SPEED, RAIL, createWorld, launchVelocity, platformX, predictPath, shoot, simulateShot, step, windmillPeriod } from "./world";
 
 const hole = (name: string) => HOLES.find((h) => h.name === name)!;
 /** The middle of a hole's release window (0 for holes without a windmill). */
@@ -160,5 +160,37 @@ describe("obstacles", () => {
     shoot(world, { x: -160, y: 0 }); // flat and hard, straight at the wall
     for (let i = 0; i < 300; i++) step(world);
     expect(world.ball.position.x).toBeLessThan(wall.walls![0].x);
+  });
+
+  it("a proper shot from a ball resting in the sand blasts it out", () => {
+    const trap = hole("Sand trap");
+    const world = createWorld(trap);
+    Matter.Body.setPosition(world.ball, { x: 640, y: 462 - 11 });
+    for (let i = 0; i < 60; i++) step(world); // settle into the sand
+    shoot(world, { x: -110, y: 110 });
+    for (let i = 0; i < 40; i++) step(world);
+    expect(world.ball.position.x).toBeGreaterThan(trap.sand![0].x + trap.sand![0].w); // out of the far side
+  });
+
+  it("keeps the ball on the screen: a hard shot at the edge drops beside the rail", () => {
+    for (const pull of [{ x: 160, y: 20 }, { x: -160, y: 0 }]) {
+      const world = createWorld(hole("Over the hill"));
+      shoot(world, pull);
+      let lost = false;
+      for (let i = 0; i < 700; i++) if (step(world) === "lost") lost = true;
+      expect(lost).toBe(false);
+      expect(world.ball.position.x).toBeGreaterThan(RAIL);
+      expect(world.ball.position.x).toBeLessThan(WORLD.width - RAIL);
+    }
+  });
+
+  it("lets a ball resting against a rail be hit away from it", () => {
+    const world = createWorld(hole("The warm-up"));
+    Matter.Body.setPosition(world.ball, { x: WORLD.width - RAIL - 12, y: 440 - 11 }); // up against the right rail
+    for (let i = 0; i < 30; i++) step(world);
+    const against = world.ball.position.x;
+    shoot(world, { x: 60, y: 0 }); // back to the left
+    for (let i = 0; i < 60; i++) step(world);
+    expect(world.ball.position.x).toBeLessThan(against - 50);
   });
 });

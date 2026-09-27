@@ -14,8 +14,14 @@ export const MAX_SPEED = 18;
 const GROUND_THICKNESS = 40;
 const REST_SPEED = 0.12;
 const REST_TICKS = 20;
-/** Inside sand, the ball keeps this much of its speed each tick. */
+/** Rolling along a bunker's floor, the ball keeps this much of its speed each tick. */
 const SAND_GRIP = 0.8;
+/** Sand only grips a ball that's down on its floor (within this much of resting there)... */
+const SAND_FLOOR_BAND = 8;
+/** ...and not in the first moments of a shot, so a proper hit blasts out rather than dying on the spot. */
+const SAND_GRACE_TICKS = 12;
+/** The edges of the course: invisible-physics rails the ball bounces off, drawn as plastic strips. */
+export const RAIL = 6;
 
 export type GolfEvent = "none" | "sunk" | "lost" | "stopped";
 
@@ -26,6 +32,8 @@ export type GolfWorld = {
   platform?: Matter.Body;
   windmill?: Matter.Body;
   tick: number;
+  /** The tick of the last shot (for the sand's grace period). */
+  shotAt: number;
   /** Where the ball goes back to if it's lost: the last place it came to rest. */
   restSpot: Point;
   stillTicks: number;
@@ -102,6 +110,10 @@ export function createWorld(hole: Hole): GolfWorld {
   for (const wall of hole.walls ?? []) {
     bodies.push(Matter.Bodies.rectangle(wall.x + wall.w / 2, wall.y + wall.h / 2, wall.w, wall.h, { isStatic: true, chamfer: { radius: 6 }, friction: 0.6, restitution: 0.35, label: "wall" }));
   }
+  // Rails at both sides, reaching far above the screen: a ball can't end up hidden off the edge.
+  for (const x of [RAIL - 30, WORLD.width - RAIL]) {
+    bodies.push(Matter.Bodies.rectangle(x + 15, WORLD.height / 2 - 600, 30, WORLD.height + 1400, { isStatic: true, friction: 0.8, restitution: 0, label: "rail" }));
+  }
   const windmill = hole.windmill ? windmillBody(hole.windmill) : undefined;
   if (windmill) bodies.push(windmill);
 
@@ -123,7 +135,7 @@ export function createWorld(hole: Hole): GolfWorld {
   bodies.push(ball);
   Matter.Composite.add(engine.world, bodies);
 
-  return { hole, engine, ball, platform, windmill, tick: 0, restSpot: { ...hole.tee }, stillTicks: 0, inFlight: false, sunk: false };
+  return { hole, engine, ball, platform, windmill, tick: 0, shotAt: -Infinity, restSpot: { ...hole.tee }, stillTicks: 0, inFlight: false, sunk: false };
 }
 
 /** Launch velocity for a pull-back (the finger's offset from the ball). */
@@ -145,6 +157,7 @@ export function shoot(world: GolfWorld, pull: Point) {
   Matter.Body.setAngularVelocity(world.ball, 0);
   world.inFlight = true;
   world.stillTicks = 0;
+  world.shotAt = world.tick;
 }
 
 function respawn(world: GolfWorld) {
@@ -195,11 +208,24 @@ export function step(world: GolfWorld): GolfEvent {
   for (const zone of world.hole.wind ?? []) {
     if (inside(at, zone)) Matter.Body.setVelocity(world.ball, { x: world.ball.velocity.x + zone.push.x, y: world.ball.velocity.y + zone.push.y });
   }
-  if ((world.hole.sand ?? []).some((zone) => inside(at, zone))) {
+  const settledIn = (zone: Rect) => inside(at, zone) && at.y >= zone.y + zone.h - BALL_RADIUS - SAND_FLOOR_BAND;
+  if (world.tick - world.shotAt > SAND_GRACE_TICKS && (world.hole.sand ?? []).some(settledIn)) {
     Matter.Body.setVelocity(world.ball, { x: world.ball.velocity.x * SAND_GRIP, y: world.ball.velocity.y * SAND_GRIP });
   }
 
+  const headingX = world.ball.velocity.x;
   Matter.Engine.update(world.engine, TICK_MS);
+
+  // The rails catch like a net: a ball that just bounced off one (heading into it before this step, away
+  // after) drops beside it and waits, rather than bouncing back into play. A shot away from a rail isn't a bounce.
+  const { x: bx, y: by } = world.ball.position;
+  const vx = world.ball.velocity.x;
+  const offLeft = bx <= RAIL + BALL_RADIUS + 2 && headingX < 0 && vx > 0;
+  const offRight = bx >= WORLD.width - RAIL - BALL_RADIUS - 2 && headingX > 0 && vx < 0;
+  if (offLeft || offRight) {
+    Matter.Body.setVelocity(world.ball, { x: 0, y: world.ball.velocity.y });
+    Matter.Body.setPosition(world.ball, { x: bx, y: by });
+  }
 
   if (inCup(world)) {
     world.sunk = true;

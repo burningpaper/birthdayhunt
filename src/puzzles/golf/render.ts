@@ -1,4 +1,5 @@
 import { BALL_RADIUS, CUP, WORLD, type Hole, type Point, type Rect, type Windmill } from "./holes";
+import { RAIL } from "./world";
 
 /**
  * Drawing one frame of Flick Golf onto a canvas, in world units (the caller
@@ -247,10 +248,21 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Point) {
   ctx.fill();
 }
 
+/** The rails at the course's edges, which the ball bounces off. */
+function drawRails(ctx: CanvasRenderingContext2D) {
+  for (const x of [0, WORLD.width - RAIL]) {
+    ctx.fillStyle = "rgba(255,247,232,0.16)";
+    ctx.fillRect(x, 0, RAIL, WORLD.height);
+    ctx.fillStyle = "rgba(255,247,232,0.35)";
+    ctx.fillRect(x + (x === 0 ? RAIL - 2 : 0), 0, 2, WORLD.height);
+  }
+}
+
 export function drawFrame(ctx: CanvasRenderingContext2D, frame: Frame) {
   const { hole, ball, platformX, windmillAngle, aim, ready, time } = frame;
   ctx.clearRect(-200, -200, WORLD.width + 400, WORLD.height + 400);
 
+  drawRails(ctx);
   for (const zone of hole.wind ?? []) drawWind(ctx, zone, time);
   // With a windmill, the block above its hub is its tower, drawn behind the sails.
   const tower = hole.windmill ? (hole.walls ?? []).find((w) => w.y < 0 && hole.windmill!.x > w.x && hole.windmill!.x < w.x + w.w) : undefined;
