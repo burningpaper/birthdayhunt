@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="0%" r="100%">
+      <stop offset="0" stop-color="#2A4590"/>
+      <stop offset="0.6" stop-color="#162654"/>
+      <stop offset="1" stop-color="#0E1936"/>
+    </radialGradient>
+    <linearGradient id="plastic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD95A"/>
+      <stop offset="0.55" stop-color="#FFC21A"/>
+      <stop offset="1" stop-color="#F2A900"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="dots" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="16" r="2.4" fill="#FFFFFF" fill-opacity="0.07"/>
+    </pattern>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#dots)"/>
+  <!-- The plastic tile: a dark lip below, the glossy face, a highlight across the top. -->
+  <rect x="86" y="104" width="340" height="340" rx="84" fill="#B8860B"/>
+  <rect x="86" y="86" width="340" height="340" rx="84" fill="url(#plastic)"/>
+  <rect x="112" y="102" width="288" height="120" rx="60" fill="url(#gloss)"/>
+  <!-- The treasure chest (Phosphor's, fill weight), in ink. -->
+  <g transform="translate(256 270) scale(0.92) translate(-128 -128)">
+    <path fill="#14213F" d="M240,124v68a16,16,0,0,1-16,16H32a16,16,0,0,1-16-16V124a4,4,0,0,1,4-4H56v64a8,8,0,0,0,8.53,8A8.17,8.17,0,0,0,72,183.73V120h40v20a4,4,0,0,0,4,4h24a4,4,0,0,0,4-4V120h40v64a8,8,0,0,0,8.53,8,8.17,8.17,0,0,0,7.47-8.25V120h36A4,4,0,0,1,240,124ZM184,40H72A56,56,0,0,0,16,96v4a4,4,0,0,0,4,4H56V64.27A8.17,8.17,0,0,1,63.47,56,8,8,0,0,1,72,64v40h40V92a4,4,0,0,1,4-4h24a4,4,0,0,1,4,4v12h40V64.27A8.17,8.17,0,0,1,191.47,56,8,8,0,0,1,200,64v40h36a4,4,0,0,0,4-4V96A56,56,0,0,0,184,40Z"/>
+  </g>
+  <!-- A few sparkles: treasure! -->
+  <g fill="#FFF7E8">
+    <path d="M430 70 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7z"/>
+    <path d="M76 400 l5 12 12 5 -12 5 -5 12 -5 -12 -12 -5 12 -5z" fill-opacity="0.85"/>
+    <path d="M452 380 l4 9 9 4 -9 4 -4 9 -4 -9 -9 -4 9 -4z" fill-opacity="0.7"/>
+  </g>
+</svg>
