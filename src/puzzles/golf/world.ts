@@ -72,6 +72,17 @@ export function windmillPeriod(windmill: Windmill): number {
   return windmill.period;
 }
 
+/**
+ * How many ticks until a hole's moving parts (windmill or bridge) are back
+ * where they started: stored shots on such holes say when in this cycle to
+ * release. 1 for a hole with nothing moving.
+ */
+export function holeCycle(hole: Hole): number {
+  if (hole.windmill) return windmillPeriod(hole.windmill);
+  const p = hole.movingPlatform;
+  return p ? Math.round((2 * (p.toX - p.fromX)) / p.speed) : 1;
+}
+
 /** Radians per tick. */
 export function windmillSpeed(windmill: Windmill): number {
   return (Math.PI * 2) / windmill.blades / windmill.period;
@@ -243,7 +254,9 @@ export function step(world: GolfWorld): GolfEvent {
     world.stillTicks++;
     if (world.stillTicks >= REST_TICKS && world.inFlight) {
       world.inFlight = false;
-      world.restSpot = { ...world.ball.position };
+      // Resting on the moving bridge counts as stopped (so it can be hit from there), but it's never
+      // the respawn spot: the bridge will have moved on, and a lost ball would fall again forever.
+      if (!onPlatform) world.restSpot = { ...world.ball.position };
       return "stopped";
     }
   } else {

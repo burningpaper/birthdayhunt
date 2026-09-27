@@ -1,7 +1,7 @@
 import Matter from "matter-js";
 import { describe, expect, it } from "vitest";
 import { HOLES, WORLD, holesFor, type Point } from "./holes";
-import { MAX_SPEED, RAIL, createWorld, launchVelocity, platformX, predictPath, shoot, simulateShot, step, windmillPeriod } from "./world";
+import { MAX_SPEED, RAIL, createWorld, holeCycle, launchVelocity, platformX, predictPath, shoot, simulateShot, step, windmillPeriod } from "./world";
 
 const hole = (name: string) => HOLES.find((h) => h.name === name)!;
 /** The middle of a hole's release window (0 for holes without a windmill). */
@@ -32,8 +32,9 @@ describe("the course", () => {
   for (const h of HOLES) {
     it(`"${h.name}"'s stored shot still sinks a little off, and after the ball has settled on the tee`, () => {
       // Real play adds both: a finger lands a fraction off, and the ball sits a while before the shot.
-      const wait = h.windmill ? windmillPeriod(h.windmill) * 2 + release(h) : 45;
-      const nudge = h.windmill ? 0.75 : 1.5;
+      const wait = h.testShot.phase ? holeCycle(h) * 2 + release(h) : 45;
+      // Skimming the trampoline or timing the moving parts is precise by design, so those allow a finer margin.
+      const nudge = h.windmill || h.movingPlatform || h.bouncePads ? 0.75 : 1.5;
       for (const dx of [-nudge, nudge]) for (const dy of [-nudge, nudge]) {
         expect(simulateShot(h, { x: h.testShot.x + dx, y: h.testShot.y + dy }, 900, wait)).toBe("sunk");
       }
@@ -192,5 +193,64 @@ describe("obstacles", () => {
     shoot(world, { x: 60, y: 0 }); // back to the left
     for (let i = 0; i < 60; i++) step(world);
     expect(world.ball.position.x).toBeLessThan(against - 50);
+  });
+});
+
+/** Play a shot and note what the ball touched on the way: the obstacle a hole is built around. */
+function playNoting(h: (typeof HOLES)[number], pull: Point, wait: number) {
+  const world = createWorld(h);
+  const touched = { pad: false, platform: false, wind: false };
+  Matter.Events.on(world.engine, "collisionStart", (e) => {
+    for (const pair of e.pairs) {
+      const labels = [pair.bodyA.label, pair.bodyB.label];
+      if (!labels.includes("ball")) continue;
+      if (labels.includes("pad")) touched.pad = true;
+      if (labels.includes("platform")) touched.platform = true;
+    }
+  });
+  for (let i = 0; i < wait; i++) step(world);
+  shoot(world, pull);
+  let event = "none";
+  for (let i = 0; i < 900 && event === "none"; i++) {
+    event = step(world);
+    const { x, y } = world.ball.position;
+    if ((h.wind ?? []).some((z) => x > z.x && x < z.x + z.w && y > z.y && y < z.y + z.h)) touched.wind = true;
+  }
+  return { sunk: event === "sunk", touched };
+}
+
+describe("obstacles can't be dodged", () => {
+  // Every shot that sinks (from a grid of pull-backs, and across the hole's cycle) must have dealt with the obstacle.
+  const cases = [
+    { name: "Splash and bounce", needs: "pad" },
+    { name: "The moving bridge", needs: "platform" },
+    { name: "Headwind", needs: "wind" },
+    { name: "The grand finale", needs: "wind" },
+  ] as const;
+  for (const { name, needs } of cases) {
+    it(`"${name}": every sinking shot uses the ${needs}`, () => {
+      const h = hole(name);
+      const cycle = holeCycle(h);
+      const waits = cycle > 1 ? Array.from({ length: 8 }, (_, i) => Math.round((i * cycle) / 8)) : [0];
+      let sunk = 0;
+      for (let x = -162; x <= 0; x += 9) for (let y = 0; y <= 162; y += 9) for (const wait of waits) {
+        const shot = playNoting(h, { x, y }, wait);
+        if (!shot.sunk) continue;
+        sunk++;
+        expect(shot.touched[needs], `pull ${x},${y} after ${wait} ticks sank without the ${needs}`).toBe(true);
+      }
+      expect(sunk, "the grid should find some sinking shots, or this test proves nothing").toBeGreaterThan(0);
+    });
+  }
+
+  it("a ball resting on the moving bridge can be hit from there, but a lost ball never respawns on it", () => {
+    const bridge = hole("The moving bridge");
+    const world = createWorld(bridge);
+    Matter.Body.setPosition(world.ball, { x: platformX(world)! + 60, y: bridge.movingPlatform!.y - 11 });
+    world.inFlight = true;
+    let event = "none";
+    for (let i = 0; i < 200 && event !== "stopped"; i++) event = step(world);
+    expect(event).toBe("stopped"); // resting on the bridge: ready for a shot
+    expect(world.restSpot).toEqual(bridge.tee); // but a lost ball still goes back to the tee
   });
 });

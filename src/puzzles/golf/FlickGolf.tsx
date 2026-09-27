@@ -8,7 +8,7 @@ import type { PuzzleProps } from "../types";
 import { useElementSize } from "../useElementSize";
 import { WORLD, holesFor, type Point } from "./holes";
 import { drawFrame } from "./render";
-import { MAX_SPEED, POWER, TICK_MS, createWorld, isAtRest, platformX, predictPath, shoot, step, windmillAngle, windmillPeriod, type GolfWorld } from "./world";
+import { MAX_SPEED, POWER, TICK_MS, createWorld, holeCycle, isAtRest, platformX, predictPath, shoot, step, windmillAngle, type GolfWorld } from "./world";
 
 /** How far you can pull back (beyond this the shot is already at full power). */
 const MAX_PULL = MAX_SPEED / POWER;
@@ -179,7 +179,7 @@ export function FlickGolf({ config, onSolved, onAttemptFailed, onProgress, hintR
           data-at-rest={atRest}
           data-scale={scale}
           data-test-shot={`${hole.testShot.x},${hole.testShot.y}`}
-          data-test-phase={hole.testShot.phase && hole.windmill ? `${windmillPeriod(hole.windmill)},${hole.testShot.phase[0]},${hole.testShot.phase[1]}` : undefined}
+          data-test-phase={hole.testShot.phase ? `${holeCycle(hole)},${hole.testShot.phase[0]},${hole.testShot.phase[1]}` : undefined}
           data-tee={`${hole.tee.x},${hole.tee.y}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

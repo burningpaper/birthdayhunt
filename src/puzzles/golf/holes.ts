@@ -38,7 +38,7 @@ export type Hole = {
   windmill?: Windmill;
   /**
    * A known sinking shot from the tee: the pull-back, and for holes with a
-   * windmill, the ticks (counted within one blade's turn) when releasing it works.
+   * windmill or moving bridge, the ticks (counted within its cycle) when releasing it works.
    */
   testShot: Point & { phase?: [number, number] };
 };
@@ -142,25 +142,24 @@ export const HOLES: Hole[] = [
   },
   {
     name: "Splash and bounce",
-    tee: { x: 100, y: 440 - BALL_RADIUS },
-    cup: { x: 830, y: 440 },
+    tee: { x: 80, y: 440 - BALL_RADIUS },
+    cup: { x: 935, y: 440 },
     islands: [
-      withCup(
-        [
-          { x: -100, y: 440 },
-          { x: 380, y: 440 },
-          { x: 380, y: 520 },
-          { x: 620, y: 520 },
-          { x: 620, y: 440 },
-          { x: 1100, y: 440 },
-        ],
-        830,
-        440,
-      ),
+      [
+        { x: -100, y: 440 },
+        { x: 200, y: 440 },
+        { x: 200, y: 520 },
+        { x: 880, y: 520 },
+        { x: 880, y: 440 },
+      ],
+      withCup([{ x: 880, y: 440 }, { x: 1100, y: 440 }], 935, 440),
     ],
-    water: [{ x: 380, y: 470, w: 240, h: 50 }],
-    bouncePads: [{ x: 250, y: 440, w: 70 }],
-    testShot: { x: -102, y: 102 },
+    // A wide pond with a curtain hanging over its far edge. A lob comes down in the water, a flat shot can't carry
+    // that far under the curtain: bounce off the floating trampoline, low enough to skim under it.
+    water: [{ x: 200, y: 470, w: 680, h: 50 }],
+    bouncePads: [{ x: 680, y: 470, w: 100 }],
+    walls: [{ x: 800, y: -400, w: 40, h: 800 }],
+    testShot: { x: -96, y: 96 },
   },
   {
     name: "Under the roof",
@@ -182,30 +181,33 @@ export const HOLES: Hole[] = [
     ],
     sand: [{ x: 345, y: 400, w: 170, h: 64 }],
     walls: [{ x: 580, y: 334, w: 440, h: 24 }],
-    testShot: { x: -93, y: 66 },
+    testShot: { x: -96, y: 60 },
   },
   {
     name: "The moving bridge",
-    tee: { x: 110, y: 440 - BALL_RADIUS },
-    cup: { x: 880, y: 360 },
+    tee: { x: 90, y: 440 - BALL_RADIUS },
+    cup: { x: 920, y: 440 },
     islands: [
       [
         { x: -100, y: 440 },
-        { x: 360, y: 440 },
-        { x: 360, y: 700 },
+        { x: 250, y: 440 },
+        { x: 250, y: 700 },
       ],
       withCup(
         [
-          { x: 700, y: 700 },
-          { x: 700, y: 360 },
-          { x: 1100, y: 360 },
+          { x: 800, y: 700 },
+          { x: 800, y: 440 },
+          { x: 1100, y: 440 },
         ],
-        880,
-        360,
+        920,
+        440,
       ),
     ],
-    movingPlatform: { y: 420, w: 120, fromX: 420, toX: 640, speed: 1.4 },
-    testShot: { x: -162, y: 108 },
+    // A wide chasm with a curtain hanging over its far edge: a lob lands in the chasm, a flat shot can't carry that
+    // far under the curtain. Land on the sliding bridge and ride it across.
+    walls: [{ x: 740, y: -400, w: 40, h: 795 }],
+    movingPlatform: { y: 440, w: 130, fromX: 250, toX: 670, speed: 2.4 },
+    testShot: { x: -90, y: 87, phase: [55, 98] },
   },
   {
     name: "Headwind",
@@ -227,8 +229,9 @@ export const HOLES: Hole[] = [
         440,
       ),
     ],
-    wind: [{ x: 200, y: -400, w: 700, h: 700, push: { x: -0.16, y: 0 } }],
-    testShot: { x: -162, y: 114 },
+    // The wind fills the whole height over the gap: no sneaking under or over it, only through.
+    wind: [{ x: 340, y: -400, w: 340, h: 900, push: { x: -0.24, y: 0 } }],
+    testShot: { x: -162, y: 45 },
   },
   {
     name: "The windmill",
@@ -274,13 +277,13 @@ export const HOLES: Hole[] = [
       ),
     ],
     sand: [{ x: 265, y: 400, w: 170, h: 66 }],
-    wind: [{ x: 440, y: -200, w: 340, h: 520, push: { x: -0.06, y: 0 } }],
+    wind: [{ x: 450, y: -400, w: 130, h: 900, push: { x: -0.12, y: 0 } }],
     windmill: { x: 700, y: 300, arm: 134, blades: 4, period: 54 },
     walls: [
       { x: 640, y: -400, w: 120, h: 640 },
       { x: 950, y: 400, w: 30, h: 40 },
     ],
-    testShot: { x: -162, y: 45, phase: [40, 48] },
+    testShot: { x: -150, y: 33, phase: [34, 41] },
   },
 ];
 
