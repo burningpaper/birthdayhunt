@@ -186,14 +186,14 @@ export const HOLES: Hole[] = [
       ),
     ],
     sand: [{ x: 345, y: 400, w: 170, h: 64 }],
-    // A letterbox: a brick column from the ground and a curtain from the sky, a window between them.
-    // Roll it low and it hits the column; lob it and it hits the curtain. Thread the gap.
+    // A letterbox high in a brick wall: a tall column from the ground and a curtain from the sky, with a
+    // window between them well above the grass. Shoot up through it, and drop down onto the green beyond.
     walls: [
-      { x: 600, y: -400, w: 40, h: 720 },
-      { x: 600, y: 392, w: 40, h: 48 },
+      { x: 620, y: -400, w: 40, h: 560 },
+      { x: 620, y: 232, w: 40, h: 208 },
     ],
     precise: true,
-    testShot: { x: -159, y: 63 },
+    testShot: { x: -82.5, y: 126 },
   },
   {
     name: "The moving bridge",
