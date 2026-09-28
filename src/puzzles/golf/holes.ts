@@ -37,6 +37,12 @@ export type Hole = {
   wind?: (Rect & { push: Point })[];
   windmill?: Windmill;
   /**
+   * Built around a precise shot (threading a gap, skimming a trampoline,
+   * timing a windmill or bridge): its stored shot need only survive a finer
+   * nudge in the tests.
+   */
+  precise?: boolean;
+  /**
    * A known sinking shot from the tee: the pull-back, and for holes with a
    * windmill or moving bridge, the ticks (counted within its cycle) when releasing it works.
    */
@@ -162,7 +168,7 @@ export const HOLES: Hole[] = [
     testShot: { x: -96, y: 96 },
   },
   {
-    name: "Under the roof",
+    name: "The letterbox",
     tee: { x: 110, y: 440 - BALL_RADIUS },
     cup: { x: 820, y: 440 },
     islands: [
@@ -180,8 +186,14 @@ export const HOLES: Hole[] = [
       ),
     ],
     sand: [{ x: 345, y: 400, w: 170, h: 64 }],
-    walls: [{ x: 580, y: 334, w: 440, h: 24 }],
-    testShot: { x: -96, y: 60 },
+    // A letterbox: a brick column from the ground and a curtain from the sky, a window between them.
+    // Roll it low and it hits the column; lob it and it hits the curtain. Thread the gap.
+    walls: [
+      { x: 600, y: -400, w: 40, h: 720 },
+      { x: 600, y: 392, w: 40, h: 48 },
+    ],
+    precise: true,
+    testShot: { x: -159, y: 63 },
   },
   {
     name: "The moving bridge",

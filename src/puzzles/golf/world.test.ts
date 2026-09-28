@@ -34,7 +34,7 @@ describe("the course", () => {
       // Real play adds both: a finger lands a fraction off, and the ball sits a while before the shot.
       const wait = h.testShot.phase ? holeCycle(h) * 2 + release(h) : 45;
       // Skimming the trampoline or timing the moving parts is precise by design, so those allow a finer margin.
-      const nudge = h.windmill || h.movingPlatform || h.bouncePads ? 0.75 : 1.5;
+      const nudge = h.precise || h.windmill || h.movingPlatform || h.bouncePads ? 0.75 : 1.5;
       for (const dx of [-nudge, nudge]) for (const dy of [-nudge, nudge]) {
         expect(simulateShot(h, { x: h.testShot.x + dx, y: h.testShot.y + dy }, 900, wait)).toBe("sunk");
       }
@@ -199,7 +199,7 @@ describe("obstacles", () => {
 /** Play a shot and note what the ball touched on the way: the obstacle a hole is built around. */
 function playNoting(h: (typeof HOLES)[number], pull: Point, wait: number) {
   const world = createWorld(h);
-  const touched = { pad: false, platform: false, wind: false };
+  const touched = { pad: false, platform: false, wind: false, window: false };
   Matter.Events.on(world.engine, "collisionStart", (e) => {
     for (const pair of e.pairs) {
       const labels = [pair.bodyA.label, pair.bodyB.label];
@@ -215,6 +215,9 @@ function playNoting(h: (typeof HOLES)[number], pull: Point, wait: number) {
     event = step(world);
     const { x, y } = world.ball.position;
     if ((h.wind ?? []).some((z) => x > z.x && x < z.x + z.w && y > z.y && y < z.y + z.h)) touched.wind = true;
+    // The letterbox: through the gap between the curtain above and the column below.
+    const [curtain, column] = h.walls ?? [];
+    if (h.name === "The letterbox" && x > curtain.x && x < curtain.x + curtain.w && y > curtain.y + curtain.h && y < column.y) touched.window = true;
   }
   return { sunk: event === "sunk", touched };
 }
@@ -226,6 +229,7 @@ describe("obstacles can't be dodged", () => {
     { name: "The moving bridge", needs: "platform" },
     { name: "Headwind", needs: "wind" },
     { name: "The grand finale", needs: "wind" },
+    { name: "The letterbox", needs: "window" },
   ] as const;
   for (const { name, needs } of cases) {
     it(`"${name}": every sinking shot uses the ${needs}`, () => {

@@ -22,6 +22,8 @@ const TAP_SLOP = 8;
 const HINT_MS = 4000;
 /** After a miss has played out, the pause before a fresh marble drops in. */
 const RESET_MS = 500;
+/** A message that only appears as the run ends (a free-build cheer, a missed star, stuck) stays this long, so it can be read. */
+const READ_MS = 1800;
 
 type Built = Placed & { id: number };
 type Drag = { id: number; type: PieceType; turns: number; from: "tray" | CellRef; startX: number; startY: number; moved: boolean; at: { x: number; y: number } };
@@ -227,7 +229,7 @@ export function MarbleBoard({ levelNumber, onSolved, onAttemptFailed, onProgress
       setMessage(null);
       setSpawnedAt(performance.now());
       setPhase("build");
-    }, RESET_MS);
+    }, finished.reason === "flew" ? RESET_MS : READ_MS); // a fly-off's "Whoops!" showed during the flight
   }, [sandbox, progress]);
 
   // How many of a type are still in the tray. A type that runs out stays (faded) rather than
