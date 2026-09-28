@@ -132,6 +132,18 @@ describe("toPlayResponse never leaks an unearned clue", () => {
     expect(json).not.toContain("riddle 1");
   });
 
+  it("never sends the parent's gift notes, whatever state the scan is in", () => {
+    const hunt = activeHunt();
+    hunt.stations = hunt.stations.map((st) => ({ ...st, gift: `secret gift ${st.order}` }));
+    hunt.treasure = { hidingNote: "secret gift spot", gift: "secret gift treasure" };
+    const progress = solveFirst(hunt, 2);
+    for (const index of [0, 1, 2, 4, 5]) {
+      // Solved, solved, playable, not yet.
+      const json = JSON.stringify(toPlayResponse(hunt, scan(hunt, progress, index)));
+      expect(json).not.toContain("secret gift");
+    }
+  });
+
   it("reveals nothing about the scanned station when it is notYet", () => {
     const hunt = activeHunt();
     const response = toPlayResponse(hunt, scan(hunt, solveFirst(hunt, 1), 4));

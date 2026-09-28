@@ -11,8 +11,10 @@ import type { MediaMode } from "@/lib/uploadClient";
 import { huntProblems } from "@/lib/validation";
 import { StatusBadge } from "./HuntList";
 import { ProgressPanel } from "./ProgressPanel";
+import { SetupChecklist } from "./SetupChecklist";
 import { StationCard } from "./StationCard";
-import { Field, Panel, QuietButton, Segmented, TextArea, TextInput } from "./ui";
+import { TreasureCard } from "./TreasureCard";
+import { Field, Panel, QuietButton, Segmented, TextInput } from "./ui";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 import { useHuntSync } from "./useHuntSync";
 import { VoiceLinesPanel } from "./VoiceLinesPanel";
@@ -93,9 +95,6 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
             <TextInput value={hunt.childName ?? ""} maxLength={40} onChange={(e) => update({ childName: e.target.value || undefined })} />
           </Field>
         </div>
-        <Field label="Treasure message (optional)" hint="Shown with the very last clue.">
-          <TextArea value={hunt.treasureMessage ?? ""} maxLength={300} placeholder="Happy birthday! You cracked every puzzle." onChange={(e) => update({ treasureMessage: e.target.value || undefined })} />
-        </Field>
         <div className="grid gap-2">
           <span className="text-sm font-bold text-ink">Difficulty</span>
           <Segmented<Difficulty>
@@ -125,6 +124,8 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
         }}
       />
 
+      <SetupChecklist hunt={hunt} />
+
       <div className="grid gap-6">
         {hunt.stations.map((station, index) => (
           <StationCard
@@ -141,6 +142,8 @@ export function HuntEditor({ initialHunt, initialProgress, mediaMode }: Props) {
           />
         ))}
       </div>
+
+      <TreasureCard hunt={hunt} mediaMode={mediaMode} onChange={update} />
 
       {hunt.stations.length < MAX_STATIONS && (
         <div className="grid justify-items-center">

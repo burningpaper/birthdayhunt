@@ -69,6 +69,10 @@ export function StationCard({ station, total, difficulty, mediaMode, canRemove, 
         <TextInput value={station.hidingNote} placeholder="Inside the laundry basket" maxLength={200} onChange={(e) => set({ hidingNote: e.target.value })} />
       </Field>
 
+      <Field label="Gift left with this code (optional)" hint="Only you see this: it's on your set-up checklist, never on the printed codes or the child's screens.">
+        <TextInput value={station.gift ?? ""} placeholder="Blue box with the bricks set" maxLength={200} onChange={(e) => set({ gift: e.target.value || undefined })} />
+      </Field>
+
       <div className="grid gap-4 rounded-[var(--radius-button)] border-2 border-ink/8 p-5">
         <Field label="Puzzle">
           <Select

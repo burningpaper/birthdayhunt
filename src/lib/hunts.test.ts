@@ -65,6 +65,18 @@ describe("hunt factory", () => {
     expect(slugify("🎉")).toBe("");
   });
 
+  it("clears gift notes when duplicating (they belong to one birthday), and loads hunts saved before gifts existed", () => {
+    const source = newHunt("Birthday");
+    source.stations[0].gift = "Bricks set";
+    source.treasure = { hidingNote: "Under the bed", gift: "Bike" };
+    const copy = duplicateHunt(source);
+    expect(copy.stations.every((st) => st.gift === undefined)).toBe(true);
+    expect(copy.treasure).toEqual({ hidingNote: "Under the bed" });
+    const old = newHunt("Old");
+    delete old.stations[0].gift;
+    expect(HuntSchema.safeParse(old).success).toBe(true);
+  });
+
   it("duplicates with new ids and keys, cleared media and draft status", () => {
     const source = newHunt("Birthday");
     source.status = "active";

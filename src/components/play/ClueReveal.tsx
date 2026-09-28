@@ -3,11 +3,14 @@
 /* eslint-disable @next/next/no-img-element -- clue photos come from Blob or local uploads at runtime */
 import { MagnifyingGlass, TreasureChest } from "@phosphor-icons/react";
 import { motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { PlasticButton } from "@/components/plastic/PlasticButton";
 import { SpeakerButton } from "@/components/plastic/SpeakerButton";
 import { ScanButton } from "@/components/scan/ScanButton";
+import { unlockAudio } from "@/lib/audio/engine";
 import { playRecording } from "@/lib/audio/voice";
 import type { ClueView } from "@/lib/playState";
+import { TreasureFinale } from "./TreasureFinale";
 import { useVoiceLines } from "./VoiceLinesContext";
 
 type Props = {
@@ -25,6 +28,7 @@ type Props = {
  */
 export function ClueReveal({ clue, autoPlay = true, extra }: Props) {
   const reduceMotion = useReducedMotion();
+  const [found, setFound] = useState(false);
   const hasPhoto = Boolean(clue.photoUrl);
   const findLine = clue.isFinal ? "Go find the treasure!" : "Go find it!";
 
@@ -79,9 +83,23 @@ export function ClueReveal({ clue, autoPlay = true, extra }: Props) {
         <div className="flex items-end gap-4">
           {extra}
           {!clue.isFinal && <ScanButton label="Scan the next code" size="md" color="cobalt" />}
+          {clue.isFinal && (
+            <PlasticButton
+              size="lg"
+              color="tomato"
+              onClick={() => {
+                unlockAudio(); // this may be a fresh page (a re-scanned last code)
+                setFound(true);
+              }}
+            >
+              <TreasureChest weight="fill" size={40} />
+              I found the treasure!
+            </PlasticButton>
+          )}
           {canHear && <SpeakerButton size="xl" color="sunflower" onSpeak={hear} label="Hear the clue again" />}
         </div>
       </div>
+      {found && <TreasureFinale message={clue.treasureMessage} onClose={() => setFound(false)} />}
     </motion.div>
   );
 }

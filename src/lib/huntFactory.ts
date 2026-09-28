@@ -55,8 +55,8 @@ export function renumber(stations: Station[]): Station[] {
 
 /**
  * A copy for next year's birthday: same puzzle choices and hiding notes,
- * fresh keys (so last year's printed codes stop working), clue media cleared
- * so every photo gets re-shot, and back to draft.
+ * fresh keys (so last year's printed codes stop working), clue media and
+ * gifts cleared so every photo gets re-shot, and back to draft.
  */
 export function duplicateHunt(source: Hunt, now: Date = new Date()): Hunt {
   const title = `${source.title} (copy)`;
@@ -67,6 +67,8 @@ export function duplicateHunt(source: Hunt, now: Date = new Date()): Hunt {
     createdAt: now.toISOString(),
     status: "draft",
     revision: 0,
+    // The treasure's hiding place carries over; the gift, like every station's, belongs to one birthday.
+    treasure: source.treasure ? { hidingNote: source.treasure.hidingNote } : undefined,
     stations: source.stations.map((s) => ({
       ...s,
       id: `s${shortId()}`,
@@ -74,6 +76,8 @@ export function duplicateHunt(source: Hunt, now: Date = new Date()): Hunt {
       // Photos are cleared for re-shooting, and a jigsaw close-up belongs to its photo.
       puzzle: s.puzzle.type === "jigsaw" ? { type: "jigsaw", pieces: s.puzzle.pieces, rotation: s.puzzle.rotation } : s.puzzle,
       clue: { showText: s.clue.showText, text: s.clue.text },
+      // Gifts belong to one birthday; a copy starts without them.
+      gift: undefined,
     })),
   };
 }

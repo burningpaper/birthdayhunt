@@ -25,6 +25,7 @@ export const VOICE_LINE_IDS = [
   "lock.close",
   "lock.bigger",
   "lock.smaller",
+  "finale.found",
 ] as const;
 
 export type VoiceLineId = (typeof VOICE_LINE_IDS)[number];
@@ -58,6 +59,13 @@ export const VOICE_LINES: VoiceLine[] = [
   { id: "lock.close", group: "Counting Lock", words: "Close! Check again.", when: "A wrong try with no dials right" },
   { id: "lock.bigger", group: "Counting Lock", words: "It's a bigger number!", when: "Hint: a dial needs a bigger number (the exact one shows on screen)" },
   { id: "lock.smaller", group: "Counting Lock", words: "It's a smaller number!", when: "Hint: a dial needs a smaller number (the exact one shows on screen)" },
+  {
+    id: "finale.found",
+    group: "Finish line",
+    words: "Your ending message, in your own words",
+    freeform: true,
+    when: "When he finds the treasure and taps \"I found the treasure!\" on the last clue: the end of the race",
+  },
 ];
 
 /** A hunt's recordings with any empty entries dropped, or undefined if there are none (so responses stay lean). */

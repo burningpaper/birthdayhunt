@@ -84,6 +84,8 @@ export const StationSchema = z.object({
   order: z.number().int().min(1),
   key: z.string().regex(/^[a-z0-9]{6}$/),
   hidingNote: z.string().max(200),
+  /** The gift left with this station's code. Parent-only: never sent to the child's screens or printed. */
+  gift: z.string().max(200).optional(),
   puzzle: PuzzleConfigSchema,
   clue: ClueSchema,
 });
@@ -96,6 +98,12 @@ export const HuntSchema = z.object({
   difficulty: z.enum(DIFFICULTIES),
   stations: z.array(StationSchema).min(1).max(10),
   treasureMessage: z.string().max(300).optional(),
+  /**
+   * The treasure: the last hiding place, with no code or puzzle (the last
+   * station's clue leads there). Parent-only notes for setting up; never sent
+   * to the child's screens.
+   */
+  treasure: z.object({ hidingNote: z.string().max(200).optional(), gift: z.string().max(200).optional() }).optional(),
   status: z.enum(["draft", "active"]),
   /** When the hunt last went live. The front page's start screen uses the most recently live hunt. */
   activatedAt: z.string().optional(),

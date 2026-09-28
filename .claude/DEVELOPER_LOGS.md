@@ -220,3 +220,15 @@ With five days to the birthday, a nice-to-have: restyle golf to look built from 
 The look comes from a few primitives. A side-on **stud** is a short rounded cylinder with a lit top edge. **Brick courses** are rows one brick high, lined up with the ground so every hole's bricks agree, four studs long, alternate rows offset by two, each with a light top edge and a dark bottom edge. **Plates** are thin bricks with studs. Ground islands are clipped to their outline and filled with green courses, with studs placed on flat tops only (never over the cup's mouth) and a glossy line up each slope.
 
 Hundreds of studs every frame would be wasteful on an iPad, so the parts that never move (the baseplate, and each hole's ground, water body, sand, walls, tower and rails) are painted once into offscreen canvases, keyed by hole and drawing scale. Each frame draws those two images, with the wind band sandwiched between them, then only what moves: water shimmer, flag, windmill sails, trampoline, bridge, tee, aim and ball.
+
+## 2026-09-28 — Gifts, a set-up checklist, and a finish line
+
+The real hunt has a gift at every station, so Ren collects presents as he goes. The parent wanted to note which gift goes where and use setup to lay the hunt out. Mid-build they added the missing piece: a final hiding place with no QR code, holding the last gift, with a voice line to end the race.
+
+**Gifts are parent-only, deliberately.** Each station gains an optional `gift`, next to its hiding note. The hiding note is printed on the QR card, and those cards get hidden around the house, so a gift name printed there could spoil a surprise. Gifts appear only in setup: never on the printout, and never in a play response (a test sends a hunt full of "secret gift" strings through every play state and checks none come out). Duplicating a hunt clears gifts, since they belong to one birthday, but keeps hiding spots.
+
+**The treasure is modelled as what it already was.** The last station's clue has always been "the clue to find the treasure", so the treasure isn't a seventh station (which would drag in codes, keys, puzzles and progress). It's a hunt-level `treasure` with a hiding note and a gift, and a Treasure card after the station list holds those, the treasure message (moved there from the details panel) and the ending message.
+
+**A set-up checklist** lists every station in order, then the treasure: where each code goes and the gift that goes with it, with a tick box per row and a "3 of 7 placed" count. Ticks are about one walk round the house, not the hunt, so they live in `localStorage` per hunt, read through `useSyncExternalStore` so server-rendered HTML and the browser agree, and never touch the saved hunt.
+
+**The finish line.** The app can't see the treasure being found, so the parent chose to let Ren say so. The last clue shows a big "I found the treasure!" button. It opens a finale (a bouncing chest, the treasure confetti, the grand fanfare and "You found the treasure!") and plays a new 18th voice line, the parent's free-form ending message. It can be recorded from the Treasure card or from Voice lines; both edit the same recording.
