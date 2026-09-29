@@ -80,7 +80,9 @@ Flick Golf is built from toy bricks: a generic plastic-brick look, with no brand
 
 ## Cat Maze
 
-The seventh puzzle adds a seventh plastic: **grape** (`#8A5CF0`), so it still has an identity of its own on sight. The maze is a friendly sitting cat, facing us: tangerine-orange fur with a darker edge, a cream tummy, pointed ears and a curling tail. The maze fills the cat with a border of fur round it. Its walls are dark brown, the eyes (big, white, with shines) and pink nose are solid features the corridors wind round, and the whiskers sit outside the face. The start is a pulsing cobalt ring at the mouth and the goal a gently beating red heart on the tummy. The child's line is thick cobalt with a light highlight down its middle, and turns green, with the heart popping, when it arrives. Hints are six sunflower dots along the route.
+The seventh puzzle adds a seventh plastic: **grape** (`#8A5CF0`), so it still has an identity of its own on sight. The maze is a friendly cat seen side-on, facing left: tangerine-orange fur with a darker edge, a cream tummy, two pointed ears, four legs with cream paws and a tail curling up over its back. The maze fills the cat with a border of fur round it, walls in dark brown. The eye (big, white, with a shine) is a solid feature the corridors wind round. At the cat's left edge the jaw hangs open (dark red inside, a pink tongue, a pink nose above and whiskers out front), and the maze's wall has a gap there: the way in is at the edge of the picture, where a start should be.
+
+A little light-blue fish waits just outside the mouth in a pulsing cobalt ring. The child picks it up (or starts in the mouth) and draws it in: the line runs from the fish's starting spot through the mouth, and the fish swims along at the end of the line, turned the way it's going. The goal is a gently beating red heart on the tummy. The line is thick cobalt with a light highlight down its middle, and turns green, with the heart popping and the fish resting on it, when it arrives. Hints are six sunflower dots along the route.
 
 ## Start screen
 

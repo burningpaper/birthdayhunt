@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawTo, makeMaze, passable, route, same, type Cell } from "./logic";
+import { SHAPE, drawTo, makeMaze, passable, route, same, type Cell } from "./logic";
 
 const count = (grid: boolean[][]) => grid.flat().filter(Boolean).length;
 
@@ -8,14 +8,18 @@ describe("the cat maze", () => {
     it(`at ${cols} across: a perfect maze over the whole cat, mouth to tummy`, () => {
       const maze = makeMaze(cols, 1234);
       const cells = count(maze.inside);
-      expect(cells).toBeGreaterThan(cols * 4);
+      expect(cells).toBeGreaterThan(cols * 5);
       expect(maze.inside[maze.mouth.r][maze.mouth.c]).toBe(true);
       expect(maze.inside[maze.tummy.r][maze.tummy.c]).toBe(true);
-      // It fills the whole cat: including the forehead, above the eyes.
-      const eyesTop = (0.33 - 0.07) / maze.scale;
-      expect(maze.inside.slice(0, Math.floor(eyesTop)).flat().filter(Boolean).length, "forehead cells").toBeGreaterThan(3);
-      // Mouth above tummy, on the cat's head.
-      expect(maze.mouth.r).toBeLessThan(maze.tummy.r);
+      // It fills the whole cat, head included.
+      const inHead = maze.inside.flatMap((row, r) => row.filter((ok, c) => ok && Math.hypot((c + 0.5) * maze.scale - SHAPE.head.x, (r + 0.5) * maze.scale - SHAPE.head.y) < SHAPE.head.r));
+      expect(inHead.length, "head cells").toBeGreaterThan(10);
+      // The way in is the mouth, at the cat's left edge: nothing to its left, the leftmost cell of its row.
+      expect(maze.inside[maze.mouth.r][maze.mouth.c - 1]).toBeFalsy();
+      expect(maze.inside[maze.mouth.r].findIndex(Boolean)).toBe(maze.mouth.c);
+      expect(maze.mouth.c).toBeLessThan(maze.cols / 5);
+      // The tummy is well to its right, in the body.
+      expect(maze.tummy.c).toBeGreaterThan(maze.cols / 2 - 2);
 
       // Perfect: every cell reachable from the tummy, and exactly cells - 1 passages (a tree, no loops).
       let passages = 0;

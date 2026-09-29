@@ -186,7 +186,7 @@ export async function mazeCellsOnScreen(page: Page, cells: Cell[]) {
   }, cells);
 }
 
-/** Draw the one route from the cat's mouth to its tummy, as a finger would. */
+/** Guide the fish along the one route from the cat's mouth to its tummy, as a finger would. */
 export async function solveMaze(page: Page) {
   const svg = page.locator("svg.maze");
   await expect(svg).toBeVisible();

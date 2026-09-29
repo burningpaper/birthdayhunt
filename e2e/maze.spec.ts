@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { makeMaze, passable } from "../src/puzzles/maze/logic";
 import { mazeCellsOnScreen, solveMaze } from "./solvers";
 
-/** Cat Maze: a line drawn with a finger, from the cat's mouth to its tummy. */
+/** Cat Maze: a fish guided with a finger, in through the cat's mouth and on to its tummy. */
 
 async function mazeStation(page: Page, grid: 15 | 19 | 25, seed = 4242): Promise<string> {
   await page.goto("/setup/login");
@@ -76,4 +76,23 @@ test("the line keeps to the corridors, can be rubbed out, and carries on after l
     const drawn = Number(await svg.getAttribute("data-path"));
     expect(drawn === 2 || drawn > 3, "only through the corridor, never the wall").toBe(true);
   }
+});
+
+test("the fish waits outside the mouth: pick it up and swim it in", async ({ page }) => {
+  await page.goto(await mazeStation(page, 19));
+  await page.getByRole("button", { name: "Tap to start!" }).click();
+  const svg = page.locator("svg.maze");
+  await expect(svg).toBeVisible();
+  const maze = makeMaze(19, 4242);
+  const [fx, fy] = (await svg.getAttribute("data-fish"))!.split(",").map(Number);
+  const fish = await page.evaluate(([x, y]) => {
+    const p = new DOMPoint(x, y).matrixTransform(document.querySelector<SVGSVGElement>("svg.maze")!.getScreenCTM()!);
+    return { x: p.x, y: p.y };
+  }, [fx, fy]);
+  const route = await mazeCellsOnScreen(page, maze.solution.slice(0, 4));
+  await page.mouse.move(fish.x, fish.y);
+  await page.mouse.down();
+  for (const p of route) await page.mouse.move(p.x, p.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(svg).toHaveAttribute("data-path", "4");
 });

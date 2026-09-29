@@ -4,11 +4,18 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { snap } from "@/lib/audio/sfx";
 import type { PuzzleProps } from "../types";
-import { SHAPE, drawTo, makeMaze, same, type Cell, type Maze as MazeData } from "./logic";
+import { SHAPE, drawTo, insideCat, makeMaze, same, type Cell, type Maze as MazeData } from "./logic";
 
 const HINT_MS = 4000;
 const HINT_CELLS = 6;
 const COLORS = { fur: "#FF9A3C", furEdge: "#C2570C", cream: "#FFE7C2", wall: "#5B2A0A", line: "#2F6BEA", lineLight: "#9CC0FF", done: "#22A94F", doneLight: "#9BE3B2", heart: "#F0453A" };
+
+/** The fish at the end of the line, facing the way it last moved. */
+function fishAt(path: Cell[]) {
+  const end = path[path.length - 1];
+  const prev = path[path.length - 2] ?? { c: end.c - 1, r: end.r };
+  return { x: end.c + 0.5, y: end.r + 0.5, angle: Math.atan2(end.r - prev.r, end.c - prev.c) };
+}
 
 /** How far along the true route a path is before it strays. */
 function correctPrefix(path: Cell[], solution: Cell[]) {
@@ -18,8 +25,9 @@ function correctPrefix(path: Cell[], solution: Cell[]) {
 }
 
 /**
- * Cat Maze: draw a line with a finger from the cat's mouth to its tummy. The
- * line keeps to the corridors (a quick swipe fills in the corridor it
+ * Cat Maze: guide the fish with a finger, in through the cat's open mouth and
+ * through the maze to its tummy. The fish swims along the end of the line,
+ * which keeps to the corridors (a quick swipe fills in the corridor it
  * skipped), going back over it rubs it out, and lifting the finger keeps
  * what's drawn, so it can be carried on from the end.
  */
@@ -68,22 +76,28 @@ export function Maze({ config, onSolved, onAttemptFailed, onProgress, hintReques
     }
   };
 
-  const cellFrom = (event: ReactPointerEvent): Cell | null => {
-    const el = svg.current;
-    const ctm = el?.getScreenCTM();
-    if (!el || !ctm) return null;
+  const mouth = useMemo(() => mouthGeometry(maze), [maze]);
+
+  const pointFrom = (event: ReactPointerEvent): { x: number; y: number } | null => {
+    const ctm = svg.current?.getScreenCTM();
+    if (!ctm) return null;
     const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
-    return { c: Math.floor(p.x), r: Math.floor(p.y) };
+    return { x: p.x, y: p.y };
   };
 
-  /** A path starts at the mouth: a touch on (or right beside) it. */
-  const nearMouth = (cell: Cell) => Math.abs(cell.c - maze.mouth.c) <= 1 && Math.abs(cell.r - maze.mouth.r) <= 1;
+  /** The fish starts the path: a touch on it, or on the mouth it's about to swim into. */
+  const startsHere = (p: { x: number; y: number }) => {
+    const onFish = Math.hypot(p.x - mouth.fishHome.x, p.y - mouth.fishHome.y) <= 1.6 * mouth.u;
+    const inMouth = p.x >= mouth.out - 0.3 * mouth.u && p.x <= maze.mouth.c + 2 && Math.abs(p.y - mouth.y) <= mouth.open + 0.5;
+    return onFish || inMouth;
+  };
 
-  const extend = (cell: Cell | null) => {
-    if (!cell || solved) return;
+  const extend = (p: { x: number; y: number } | null, starting = false) => {
+    if (!p || solved) return;
+    const cell = { c: Math.floor(p.x), r: Math.floor(p.y) };
     const current = pathRef.current;
     if (!current.length) {
-      if (nearMouth(cell)) setPath(drawTo(maze, [maze.mouth], cell));
+      if (starting ? startsHere(p) : false) setPath(drawTo(maze, [maze.mouth], cell));
       return;
     }
     setPath(drawTo(maze, current, cell));
@@ -93,20 +107,22 @@ export function Maze({ config, onSolved, onAttemptFailed, onProgress, hintReques
     <div className="grid h-full place-items-center px-6 pb-6">
       <svg
         ref={svg}
-        viewBox={`-2 -0.6 ${maze.cols + 4} ${maze.rows + 1.2}`}
+        // Room on the left for the open mouth and whiskers, which reach out past the cat (about 4 cells at Medium).
+        viewBox={`${-4.5 * (0.059 / maze.scale)} -0.6 ${maze.cols + 1 + 4.5 * (0.059 / maze.scale)} ${maze.rows + 1.2}`}
         className="maze h-full max-h-full w-full touch-none select-none"
         role="img"
-        aria-label={`Cat maze: draw from the cat's mouth to its tummy${solved ? ". Solved!" : ""}`}
+        aria-label={`Cat maze: guide the fish through the cat's mouth to its tummy${solved ? ". Solved!" : ""}`}
         data-grid={grid}
         data-seed={seed}
         data-path={path.length}
         data-solved={solved}
+        data-fish={`${mouth.fishHome.x},${mouth.fishHome.y}`}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           drawing.current = true;
-          extend(cellFrom(e));
+          extend(pointFrom(e), true);
         }}
-        onPointerMove={(e) => drawing.current && extend(cellFrom(e))}
+        onPointerMove={(e) => drawing.current && extend(pointFrom(e), !pathRef.current.length)}
         onPointerUp={() => {
           drawing.current = false;
           const current = pathRef.current;
@@ -131,18 +147,21 @@ export function Maze({ config, onSolved, onAttemptFailed, onProgress, hintReques
           />
         </motion.g>
 
-        {/* The start: a ring at the mouth, pulsing until the drawing begins. */}
+        {/* The start: the fish waiting outside the mouth, in a ring that pulses until it's picked up. */}
         {!path.length && (
-          <motion.circle
-            cx={maze.mouth.c + 0.5}
-            cy={maze.mouth.r + 0.5}
-            r={0.42}
-            fill="none"
-            stroke={COLORS.line}
-            strokeWidth={0.14}
-            animate={reduceMotion ? undefined : { r: [0.35, 0.6, 0.35], opacity: [1, 0.4, 1] }}
-            transition={{ duration: 1.4, repeat: Infinity }}
-          />
+          <>
+            <motion.circle
+              cx={mouth.fishHome.x}
+              cy={mouth.fishHome.y}
+              r={1.3 * mouth.u}
+              fill="none"
+              stroke={COLORS.line}
+              strokeWidth={0.14}
+              animate={reduceMotion ? undefined : { r: [1.2 * mouth.u, 1.55 * mouth.u, 1.2 * mouth.u], opacity: [1, 0.4, 1] }}
+              transition={{ duration: 1.4, repeat: Infinity }}
+            />
+            <Fish x={mouth.fishHome.x} y={mouth.fishHome.y} angle={0} size={1.25 * mouth.u} />
+          </>
         )}
 
         {hint.map((cell, i) => (
@@ -151,45 +170,74 @@ export function Maze({ config, onSolved, onAttemptFailed, onProgress, hintReques
 
         {path.length > 0 && (
           <g strokeLinecap="round" strokeLinejoin="round" fill="none">
-            {/* Blue while drawing; green once it reaches the tummy. */}
-            <polyline points={path.map((p) => `${p.c + 0.5},${p.r + 0.5}`).join(" ")} stroke={solved ? COLORS.done : COLORS.line} strokeWidth={0.42} className="transition-[stroke] duration-500" />
-            <polyline points={path.map((p) => `${p.c + 0.5},${p.r + 0.5}`).join(" ")} stroke={solved ? COLORS.doneLight : COLORS.lineLight} strokeWidth={0.12} className="transition-[stroke] duration-500" />
-            {!solved && <circle cx={path[path.length - 1].c + 0.5} cy={path[path.length - 1].r + 0.5} r={0.3} fill={COLORS.line} stroke="#FFFFFF" strokeWidth={0.08} />}
+            {/* The line runs from where the fish waited, in through the mouth, to the fish. Blue while drawing; green once it's home. */}
+            {[
+              { stroke: solved ? COLORS.done : COLORS.line, width: 0.42 },
+              { stroke: solved ? COLORS.doneLight : COLORS.lineLight, width: 0.12 },
+            ].map(({ stroke, width }) => (
+              <polyline
+                key={width}
+                points={[`${mouth.fishHome.x},${mouth.y}`, `${maze.mouth.c},${mouth.y}`, ...path.map((p) => `${p.c + 0.5},${p.r + 0.5}`)].join(" ")}
+                stroke={stroke}
+                strokeWidth={width}
+                className="transition-[stroke] duration-500"
+              />
+            ))}
           </g>
         )}
+        {path.length > 0 && <Fish {...fishAt(path)} size={0.95} />}
       </svg>
     </div>
   );
 }
 
-/** The cat's silhouette, in cell units: ears, head, body, a curling tail, and a cream tummy. */
+/** The cat's silhouette, side-on, in cell units: ears, head and snout, a long body on four legs, a curling tail, and a cream belly. */
 function Cat({ maze }: { maze: MazeData }) {
   const k = 1 / maze.scale;
-  const { head, body, tail, ears } = SHAPE;
+  const { head, snout, body, tail, ears, legs, legTop, legBottom } = SHAPE;
   const arc = (a: number) => `${(tail.x + Math.cos(a) * tail.r) * k} ${(tail.y + Math.sin(a) * tail.r) * k}`;
-  return (
-    <g stroke={COLORS.furEdge} strokeWidth={0.22} strokeLinejoin="round">
-      <path d={`M ${arc(tail.from)} A ${tail.r * k} ${tail.r * k} 0 0 0 ${arc(tail.to)}`} fill="none" stroke={COLORS.furEdge} strokeWidth={tail.width * k + 0.3} strokeLinecap="round" />
-      <path d={`M ${arc(tail.from)} A ${tail.r * k} ${tail.r * k} 0 0 0 ${arc(tail.to)}`} fill="none" stroke={COLORS.fur} strokeWidth={tail.width * k} strokeLinecap="round" />
-      {ears.map((ear, i) => (
-        <polygon key={i} points={ear.map(([x, y]) => `${x * k},${y * k}`).join(" ")} fill={COLORS.fur} />
+  const tailPath = `M ${arc(tail.from)} A ${tail.r * k} ${tail.r * k} 0 1 0 ${arc(tail.to)}`;
+  const shapes = (
+    <>
+      {legs.map((leg, i) => (
+        <rect key={i} x={leg.x * k} y={legTop * k} width={leg.w * k} height={(legBottom - legTop) * k} rx={(leg.w / 2) * k} />
       ))}
-      <ellipse cx={body.x * k} cy={body.y * k} rx={body.rx * k} ry={body.ry * k} fill={COLORS.fur} />
-      <circle cx={head.x * k} cy={head.y * k} r={head.r * k} fill={COLORS.fur} />
-      <ellipse cx={body.x * k} cy={(body.y + 0.03) * k} rx={body.rx * 0.62 * k} ry={body.ry * 0.7 * k} fill={COLORS.cream} stroke="none" />
+      {ears.map((ear, i) => (
+        <polygon key={i} points={ear.map(([x, y]) => `${x * k},${y * k}`).join(" ")} />
+      ))}
+      <ellipse cx={body.x * k} cy={body.y * k} rx={body.rx * k} ry={body.ry * k} />
+      <circle cx={head.x * k} cy={head.y * k} r={head.r * k} />
+      <ellipse cx={snout.x * k} cy={snout.y * k} rx={snout.rx * k} ry={snout.ry * k} />
+    </>
+  );
+  return (
+    <g strokeLinejoin="round">
+      <path d={tailPath} fill="none" stroke={COLORS.furEdge} strokeWidth={tail.width * k + 0.3} strokeLinecap="round" />
+      <path d={tailPath} fill="none" stroke={COLORS.fur} strokeWidth={tail.width * k} strokeLinecap="round" />
+      {/* The outline first, drawn fat underneath, then the fur on top: one clean edge round the whole cat. */}
+      <g fill={COLORS.furEdge} stroke={COLORS.furEdge} strokeWidth={0.5}>
+        {shapes}
+      </g>
+      <g fill={COLORS.fur}>{shapes}</g>
+      <ellipse cx={body.x * k} cy={(body.y + 0.09) * k} rx={body.rx * 0.72 * k} ry={body.ry * 0.55 * k} fill={COLORS.cream} />
+      {/* Paws. */}
+      {legs.map((leg, i) => (
+        <ellipse key={i} cx={(leg.x + leg.w / 2) * k} cy={(legBottom - 0.02) * k} rx={(leg.w / 2 + 0.01) * k} ry={0.035 * k} fill={COLORS.cream} />
+      ))}
     </g>
   );
 }
 
-/** The maze's walls: every closed side of every cell, each shared wall drawn once. */
+/** The maze's walls: every closed side of every cell, each shared wall drawn once, and a gap at the mouth: the way in. */
 function Walls({ maze }: { maze: MazeData }) {
   const lines: string[] = [];
   maze.inside.forEach((row, r) =>
     row.forEach((ok, c) => {
       if (!ok) return;
       const open = maze.open[r][c];
+      const isMouth = c === maze.mouth.c && r === maze.mouth.r;
       if (!open.N) lines.push(`M${c} ${r}h1`);
-      if (!open.W) lines.push(`M${c} ${r}v1`);
+      if (!open.W && !isMouth) lines.push(`M${c} ${r}v1`);
       if (!open.E && !maze.inside[r][c + 1]) lines.push(`M${c + 1} ${r}v1`);
       if (!open.S && !maze.inside[r + 1]?.[c]) lines.push(`M${c} ${r + 1}h1`);
     }),
@@ -197,33 +245,69 @@ function Walls({ maze }: { maze: MazeData }) {
   return <path d={lines.join("")} stroke={COLORS.wall} strokeWidth={0.14} strokeLinecap="round" fill="none" />;
 }
 
-/** Eyes the maze winds round, a nose, and whiskers. */
+/**
+ * The face: a wide-open mouth jutting out from the snout (upper and lower
+ * jaw, a tongue), its dark inside narrowing to the entrance cell: the way
+ * into the maze. Then the eye, the nose on top of the snout, and whiskers.
+ */
 function Face({ maze }: { maze: MazeData }) {
   const k = 1 / maze.scale;
-  const { eyes, nose, head } = SHAPE;
+  const { eyes } = SHAPE;
+  const { y, u, out, inner, open } = mouthGeometry(maze);
+  const jaw = (dir: 1 | -1) =>
+    `M ${out - 0.2 * u} ${y + dir * (open + 0.05 * u)} Q ${(out + inner) / 2} ${y + dir * (open + 0.55 * u)} ${inner + 0.6 * u} ${y + dir * 0.9 * u} L ${inner + 0.6 * u} ${y + dir * 0.45} L ${out + 0.1 * u} ${y + dir * open} Z`;
   return (
-    <g pointerEvents="none">
+    <g pointerEvents="none" strokeLinejoin="round">
+      {/* Inside the mouth, narrowing into the maze. */}
+      <path d={`M ${out} ${y - open} L ${inner} ${y - 0.42} L ${inner} ${y + 0.42} L ${out} ${y + open} Z`} fill="#6B1616" stroke={COLORS.wall} strokeWidth={0.12} />
+      <ellipse cx={out + (inner - out) * 0.45} cy={y + open * 0.62} rx={(inner - out) * 0.4} ry={0.28 * u} fill="#F0508F" stroke={COLORS.wall} strokeWidth={0.08} />
+      {/* Upper and lower jaw, in fur. */}
+      <path d={jaw(-1)} fill={COLORS.fur} stroke={COLORS.furEdge} strokeWidth={0.22 * u} />
+      <path d={jaw(1)} fill={COLORS.fur} stroke={COLORS.furEdge} strokeWidth={0.22 * u} />
       {eyes.map((e, i) => (
         <g key={i}>
           <circle cx={e.x * k} cy={e.y * k} r={e.r * k} fill="#FFFFFF" stroke={COLORS.wall} strokeWidth={0.12} />
-          <circle cx={e.x * k} cy={(e.y + 0.01) * k} r={e.r * 0.55 * k} fill="#14213F" />
-          <circle cx={(e.x - e.r * 0.25) * k} cy={(e.y - e.r * 0.25) * k} r={e.r * 0.2 * k} fill="#FFFFFF" />
+          <circle cx={(e.x - e.r * 0.25) * k} cy={(e.y + 0.005) * k} r={e.r * 0.58 * k} fill="#14213F" />
+          <circle cx={(e.x - e.r * 0.45) * k} cy={(e.y - e.r * 0.3) * k} r={e.r * 0.22 * k} fill="#FFFFFF" />
         </g>
       ))}
-      <path d={`M ${(nose.x - 0.035) * k} ${(nose.y - 0.018) * k} L ${(nose.x + 0.035) * k} ${(nose.y - 0.018) * k} L ${nose.x * k} ${(nose.y + 0.025) * k} Z`} fill="#F0508F" stroke={COLORS.wall} strokeWidth={0.06} />
-      <g stroke={COLORS.wall} strokeWidth={0.1} strokeLinecap="round">
-        {[-1, 1].map((side) =>
-          [-0.03, 0.02].map((dy) => (
-            <line
-              key={`${side},${dy}`}
-              x1={(head.x + side * (head.r - 0.03)) * k}
-              y1={(nose.y + dy) * k}
-              x2={(head.x + side * (head.r + 0.11)) * k}
-              y2={(nose.y + dy * 2.2) * k}
-            />
-          )),
-        )}
+      {/* The nose, on top of the snout, and whiskers sweeping out from beside it. */}
+      <ellipse cx={out + 0.45 * u} cy={y - open - 0.4 * u} rx={0.45 * u} ry={0.32 * u} fill="#F0508F" stroke={COLORS.wall} strokeWidth={0.08 * u} />
+      <g stroke={COLORS.wall} strokeWidth={0.1 * u} strokeLinecap="round">
+        {[-0.5, 0.15].map((dy) => (
+          <line key={dy} x1={out + 0.6 * u} y1={y - open + (-0.15 + dy) * u} x2={out - 1.6 * u} y2={y - open + (-0.7 + dy * 2) * u} />
+        ))}
       </g>
+    </g>
+  );
+}
+
+/**
+ * Where the open mouth is, in cell units. It runs from past the cat's edge
+ * (the lips) in to the entrance cell's open left side. It's sized to the cat,
+ * not the grid (u is about a cell at Medium), so it looks the same at every size.
+ */
+function mouthGeometry(maze: MazeData) {
+  const k = 1 / maze.scale;
+  const y = maze.mouth.r + 0.5;
+  let edge = maze.mouth.c * maze.scale;
+  while (edge > 0 && insideCat(edge - 0.005, y * maze.scale)) edge -= 0.005;
+  const u = k * 0.059;
+  const out = edge * k - 1.1 * u;
+  return { y, u, out, inner: maze.mouth.c + 0.1, open: 1.25 * u, fishHome: { x: out - 2.1 * u, y } };
+}
+
+/** The fish: silvery blue with darker fins and a big eye, facing `angle` (radians; 0 is to the right). */
+function Fish({ x, y, angle, size }: { x: number; y: number; angle: number; size: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${(angle * 180) / Math.PI}) scale(${size})`} pointerEvents="none">
+      <path d="M -0.55 0 L -0.95 -0.4 L -0.85 0 L -0.95 0.4 Z" fill="#2F7FC9" stroke="#14213F" strokeWidth={0.06} strokeLinejoin="round" />
+      <ellipse cx={0} cy={0} rx={0.62} ry={0.36} fill="#6EC3F5" stroke="#14213F" strokeWidth={0.06} />
+      <path d="M -0.1 -0.34 Q 0.05 -0.6 0.25 -0.32 Z" fill="#2F7FC9" stroke="#14213F" strokeWidth={0.05} />
+      <path d="M -0.35 -0.12 Q -0.2 0 -0.35 0.12" fill="none" stroke="#2F7FC9" strokeWidth={0.07} strokeLinecap="round" />
+      <ellipse cx={0.05} cy={0.12} rx={0.3} ry={0.12} fill="#FFFFFF" opacity={0.35} />
+      <circle cx={0.34} cy={-0.07} r={0.11} fill="#FFFFFF" stroke="#14213F" strokeWidth={0.04} />
+      <circle cx={0.37} cy={-0.07} r={0.06} fill="#14213F" />
     </g>
   );
 }

@@ -1,9 +1,10 @@
 import { seededRng } from "../random";
 
 /**
- * The cat maze (kept free of React so it can be tested). A sitting cat,
- * facing us, is laid over a square grid; every cell whose centre is inside
- * the cat (but not in an eye) is part of the maze. A randomised depth-first
+ * The cat maze (kept free of React so it can be tested). A cat seen side-on,
+ * facing left, is laid over a square grid; every cell wholly inside the cat
+ * (and clear of its eye) is part of the maze. The way in is its open mouth,
+ * at the cat's left edge; the way out is its tummy. A randomised depth-first
  * search carves a perfect maze through those cells: exactly one route
  * between any two, so exactly one way from the mouth to the tummy.
  *
@@ -13,33 +14,42 @@ import { seededRng } from "../random";
 export type Cell = { c: number; r: number };
 export type Side = "N" | "E" | "S" | "W";
 
-/** The cat, in shape units: 1 across, y down. */
+/** The cat, side-on and facing left, in shape units (y down). */
 export const SHAPE = {
-  width: 1.12,
-  height: 1.28,
-  head: { x: 0.5, y: 0.36, r: 0.27 },
+  width: 1.82,
+  height: 1.06,
+  /** The size setting (15, 19 or 25) means that many cells across this width, as it always has. */
+  reference: 1.12,
+  head: { x: 0.36, y: 0.4, r: 0.25 },
+  snout: { x: 0.15, y: 0.48, rx: 0.13, ry: 0.1 },
   ears: [
     [
-      [0.26, 0.24],
-      [0.28, 0.02],
-      [0.45, 0.13],
+      [0.22, 0.24],
+      [0.2, 0.02],
+      [0.37, 0.16],
     ],
     [
-      [0.74, 0.24],
-      [0.72, 0.02],
-      [0.55, 0.13],
+      [0.4, 0.17],
+      [0.5, 0.0],
+      [0.57, 0.23],
     ],
   ] as [number, number][][],
-  body: { x: 0.5, y: 0.9, rx: 0.37, ry: 0.36 },
-  /** The tail: a band along a quarter circle, curling up the cat's right. */
-  tail: { x: 0.83, y: 0.98, r: 0.2, width: 0.13, from: Math.PI * 0.5, to: -Math.PI * 0.25 },
-  eyes: [
-    { x: 0.39, y: 0.33, r: 0.056 },
-    { x: 0.61, y: 0.33, r: 0.056 },
+  body: { x: 1.0, y: 0.6, rx: 0.53, ry: 0.27 },
+  legs: [
+    { x: 0.6, w: 0.12 },
+    { x: 0.78, w: 0.12 },
+    { x: 1.14, w: 0.12 },
+    { x: 1.32, w: 0.12 },
   ],
-  nose: { x: 0.5, y: 0.43 },
-  mouth: { x: 0.5, y: 0.51 },
-  tummy: { x: 0.5, y: 0.92 },
+  legTop: 0.7,
+  legBottom: 1.02,
+  /** The tail: a band along an arc, curling up over the cat's back end. */
+  tail: { x: 1.6, y: 0.42, r: 0.17, width: 0.11, from: Math.PI * 0.5, to: -Math.PI * 0.62 },
+  eyes: [{ x: 0.33, y: 0.34, r: 0.05 }],
+  nose: { x: 0.04, y: 0.42 },
+  /** The way in: the open mouth, at the snout's left edge. */
+  mouth: { x: 0.03, y: 0.53 },
+  tummy: { x: 1.0, y: 0.66 },
 };
 
 function inTriangle(x: number, y: number, [a, b, c]: [number, number][]) {
@@ -60,9 +70,11 @@ function inTail(x: number, y: number) {
 
 /** Is a point (shape units) inside the cat? */
 export function insideCat(x: number, y: number): boolean {
-  const { head, body } = SHAPE;
+  const { head, snout, body, legs, legTop, legBottom } = SHAPE;
   if (Math.hypot(x - head.x, y - head.y) <= head.r) return true;
+  if (((x - snout.x) / snout.rx) ** 2 + ((y - snout.y) / snout.ry) ** 2 <= 1) return true;
   if (((x - body.x) / body.rx) ** 2 + ((y - body.y) / body.ry) ** 2 <= 1) return true;
+  if (legs.some((leg) => x >= leg.x && x <= leg.x + leg.w && y >= legTop && y <= legBottom)) return true;
   if (SHAPE.ears.some((ear) => inTriangle(x, y, ear))) return true;
   return inTail(x, y);
 }
@@ -77,6 +89,8 @@ function touchesEye(x0: number, y0: number, size: number) {
 }
 
 export type Maze = {
+  /** The size setting it was made at (15, 19 or 25). */
+  size: number;
   cols: number;
   rows: number;
   /** Shape units per cell. */
@@ -85,6 +99,7 @@ export type Maze = {
   inside: boolean[][];
   /** Which sides of each cell are open (no wall). */
   open: Record<Side, boolean>[][];
+  /** The way in: this cell's left side is the open mouth, at the edge of the cat. */
   mouth: Cell;
   tummy: Cell;
   /** The one route from mouth to tummy, both included. */
@@ -113,12 +128,13 @@ function cellAt(scale: number, x: number, y: number): Cell {
 }
 
 /**
- * The cat's cells at `cols` across: wholly inside the outline (so the maze
- * sits inside the cat with a border of fur round it), clear of the eyes, and
+ * The cat's cells at a size setting: wholly inside the outline (so the maze
+ * sits inside the cat with a border of fur round it), clear of the eye, and
  * all joined to the tummy.
  */
-function catCells(cols: number) {
-  const scale = SHAPE.width / cols;
+function catCells(size: number) {
+  const scale = SHAPE.reference / size;
+  const cols = Math.ceil(SHAPE.width / scale);
   const rows = Math.ceil(SHAPE.height / scale);
   const raw = Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) => {
@@ -142,7 +158,7 @@ function catCells(cols: number) {
       }
     }
   }
-  return { scale, rows, inside, tummy };
+  return { scale, cols, rows, inside, tummy };
 }
 
 /** The maze cell nearest a point in shape units (so the mouth lands on a real cell even if its exact spot isn't one). */
@@ -209,19 +225,19 @@ export function route(maze: Pick<Maze, "open" | "cols" | "rows">, from: Cell, to
 }
 
 /**
- * The maze for a station. A few attempts from the seed, keeping the first
+ * The maze for a station, at a size setting. A few attempts from the seed, keeping the first
  * whose route from mouth to tummy is satisfyingly long (at least a quarter of
  * all cells); the same seed and size always give the same maze.
  */
-export function makeMaze(cols: number, seed: number): Maze {
-  const { scale, rows, inside, tummy } = catCells(cols);
+export function makeMaze(size: number, seed: number): Maze {
+  const { scale, cols, rows, inside, tummy } = catCells(size);
   const mouth = nearestCell(inside, scale, SHAPE.mouth.x, SHAPE.mouth.y);
   const total = inside.flat().filter(Boolean).length;
   let best: Maze | null = null;
   for (let attempt = 0; attempt < 24; attempt++) {
     const open = carve(inside, cols, rows, tummy, seededRng(seed + attempt * 7919));
     const solution = route({ open, cols, rows }, mouth, tummy);
-    const maze: Maze = { cols, rows, scale, inside, open, mouth, tummy, solution };
+    const maze: Maze = { size, cols, rows, scale, inside, open, mouth, tummy, solution };
     if (!best || solution.length > best.solution.length) best = maze;
     if (solution.length >= total / 4) return maze;
   }
