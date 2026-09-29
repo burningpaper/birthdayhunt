@@ -1,12 +1,13 @@
 "use client";
 
-import { withLockDigits } from "@/lib/difficulty";
+import { Shuffle } from "@phosphor-icons/react";
+import { newMazeSeed, withLockDigits } from "@/lib/difficulty";
 import type { LockQuestion, PuzzleConfig } from "@/lib/schema";
 import type { MediaMode } from "@/lib/uploadClient";
 import { CardPhotosField } from "./CardPhotosField";
 import { HOLES } from "@/puzzles/golf/holes";
 import { LEVELS } from "@/puzzles/marble3d/levels";
-import { Field, Segmented, Select, TextInput, Toggle } from "./ui";
+import { Field, QuietButton, Segmented, Select, TextInput, Toggle } from "./ui";
 import { VoiceRecorder } from "./VoiceRecorder";
 
 type Props = { puzzle: PuzzleConfig; mediaMode: MediaMode; onChange: (puzzle: PuzzleConfig) => void };
@@ -77,6 +78,25 @@ export function PuzzleOptions({ puzzle, mediaMode, onChange }: Props) {
       );
     case "countingLock":
       return <LockOptions puzzle={puzzle} mediaMode={mediaMode} onChange={onChange} />;
+    case "maze":
+      return (
+        <div className="flex flex-wrap items-end gap-6">
+          <Segmented
+            label="Size"
+            options={[
+              { value: 15, label: "Small" },
+              { value: 19, label: "Medium" },
+              { value: 25, label: "Big" },
+            ]}
+            value={puzzle.grid}
+            onChange={(grid) => onChange({ ...puzzle, grid })}
+          />
+          <QuietButton onClick={() => onChange({ ...puzzle, seed: newMazeSeed() })}>
+            <Shuffle weight="bold" size={18} />
+            New maze
+          </QuietButton>
+        </div>
+      );
   }
 }
 

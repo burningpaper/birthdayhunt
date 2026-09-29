@@ -17,6 +17,7 @@ export const PUZZLE_TYPES = [
   "memoryMatch",
   "flickGolf",
   "countingLock",
+  "maze",
 ] as const;
 
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
@@ -69,6 +70,13 @@ export const PuzzleConfigSchema = z.discriminatedUnion("type", [
     type: z.literal("countingLock"),
     digits: z.union([z.literal(1), z.literal(2), z.literal(3)]),
     questions: z.array(LockQuestionSchema).max(3),
+  }),
+  z.object({
+    type: z.literal("maze"),
+    /** Cells across the cat: 15, 19 or 25. */
+    grid: z.union([z.literal(15), z.literal(19), z.literal(25)]),
+    /** Which maze: picked when the station is made, so each station has its own (and keeps it). */
+    seed: z.number().int().min(0),
   }),
 ]);
 

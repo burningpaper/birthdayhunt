@@ -15,6 +15,7 @@ export const VOICE_LINE_IDS = [
   "instruction.memoryMatch",
   "instruction.flickGolf",
   "instruction.countingLock",
+  "instruction.maze",
   "celebrate.station",
   "celebrate.final",
   "clue.find",
@@ -43,7 +44,7 @@ export const VOICE_LINES: VoiceLine[] = [
     freeform: true,
     when: "On the front page when this hunt is running: the big red button plays it, then the scanner opens for the first code",
   },
-  ...(["jigsaw", "marbleRun", "trainTrack", "memoryMatch", "flickGolf", "countingLock"] as const).map((type) => ({
+  ...(["jigsaw", "marbleRun", "trainTrack", "memoryMatch", "flickGolf", "countingLock", "maze"] as const).map((type) => ({
     id: `instruction.${type}` as VoiceLineId,
     group: "Puzzle instructions",
     words: PUZZLE_META[type].instruction,

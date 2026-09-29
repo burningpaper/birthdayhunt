@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyDifficulty, defaultPuzzle, withLockDigits } from "./difficulty";
+import { DEFAULT_PUZZLE_ORDER, applyDifficulty, defaultPuzzle, withLockDigits } from "./difficulty";
 import { duplicateHunt, newHunt, regenerateKeys, setHuntDifficulty, slugify } from "./huntFactory";
 import { PUZZLE_META, isPuzzleReady } from "./puzzleMeta";
 import { HuntSchema, PUZZLE_TYPES } from "./schema";
@@ -51,10 +51,19 @@ describe("difficulty presets", () => {
 });
 
 describe("hunt factory", () => {
+  it("deals each new maze its own seed, and a difficulty change resizes it but keeps it", () => {
+    const a = defaultPuzzle("maze", "medium");
+    const b = defaultPuzzle("maze", "medium");
+    expect(a).toMatchObject({ type: "maze", grid: 19 });
+    expect(a.type === "maze" && b.type === "maze" && a.seed !== b.seed).toBe(true);
+    const hard = applyDifficulty(a, "hard");
+    expect(hard).toEqual({ type: "maze", grid: 25, seed: a.type === "maze" ? a.seed : -1 });
+  });
+
   it("creates a valid six-station draft in the spec's order, every puzzle built", () => {
     const hunt = newHunt("Birthday Treasure Hunt");
     expect(HuntSchema.safeParse(hunt).success).toBe(true);
-    expect(hunt.stations.map((s) => s.puzzle.type)).toEqual([...PUZZLE_TYPES]);
+    expect(hunt.stations.map((s) => s.puzzle.type)).toEqual(DEFAULT_PUZZLE_ORDER); // the Cat Maze is picked in setup
     expect(hunt.stations.every((s) => isPuzzleReady(s.puzzle.type))).toBe(true);
     expect(hunt.stations.map((s) => s.order)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(new Set(hunt.stations.map((s) => s.key)).size).toBe(6);

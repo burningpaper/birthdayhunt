@@ -16,6 +16,7 @@ const PRESETS = {
   memoryMatch: { easy: { pairs: 8 }, medium: { pairs: 10 }, hard: { pairs: 12 } },
   flickGolf: { easy: { holes: 4 }, medium: { holes: 6 }, hard: { holes: 9 } },
   countingLock: { easy: { digits: 2 }, medium: { digits: 3 }, hard: { digits: 3 } },
+  maze: { easy: { grid: 15 }, medium: { grid: 19 }, hard: { grid: 25 } },
 } as const;
 
 /** The spec's default order for a new hunt (§4). */
@@ -25,6 +26,11 @@ export const DEFAULT_PUZZLE_ORDER: PuzzleType[] = ["jigsaw", "marbleRun", "train
 export function defaultPuzzleType(index: number): PuzzleType {
   const offered = DEFAULT_PUZZLE_ORDER.filter(isPuzzleOffered);
   return offered[index % offered.length];
+}
+
+/** A fresh maze for a new station. (Mazes are dealt from a seed, so each station gets its own.) */
+export function newMazeSeed(): number {
+  return Math.floor(Math.random() * 1_000_000_000);
 }
 
 function blankQuestion(): LockQuestion {
@@ -55,6 +61,8 @@ export function defaultPuzzle(type: PuzzleType, difficulty: Difficulty): PuzzleC
       const { digits } = PRESETS.countingLock[difficulty];
       return { type, digits, questions: fitQuestions([], digits) };
     }
+    case "maze":
+      return { type, ...PRESETS.maze[difficulty], seed: newMazeSeed() };
   }
 }
 
@@ -72,6 +80,9 @@ export function applyDifficulty(puzzle: PuzzleConfig, difficulty: Difficulty): P
   }
   if (puzzle.type === "countingLock" && fresh.type === "countingLock") {
     return { ...fresh, questions: fitQuestions(puzzle.questions, fresh.digits) };
+  }
+  if (puzzle.type === "maze" && fresh.type === "maze") {
+    return { ...fresh, seed: puzzle.seed }; // a new size, but still this station's maze
   }
   return fresh;
 }

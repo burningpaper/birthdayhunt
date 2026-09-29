@@ -26,6 +26,7 @@ Each puzzle type owns a colour, so a station has an identity the moment it opens
 | Memory Match | Sunflower | `#FFC21A` | ink |
 | Flick Golf | Tangerine | `#FF8A1F` | ink |
 | Counting Lock | Bubblegum | `#F0508F` | cream |
+| Cat Maze | Grape | `#8A5CF0` | cream |
 
 Neutrals: **Toybox** `#101C3C` (backdrop), **Toybox glow** `#1E3470`, **Ink** `#14213F`, **Cream** `#FFF7E8`. Sunflower doubles as the "treasure" colour on the finale.
 
@@ -76,6 +77,10 @@ Every sound is synthesized with the Web Audio API, so there are no audio files t
 ## Flick Golf: a toy-brick course
 
 Flick Golf is built from toy bricks: a generic plastic-brick look, with no brand names or logos. The sky is a sky-blue studded baseplate. The grass is green bricks in staggered courses (four studs long, rows lined up with the ground), with studs along every flat top and smooth slope bricks on inclines. Walls, roofs and the curtains that hang over hazards are red bricks. Water is clear blue tiles, with the pond floor's studs showing through; sand is flat tan tiles. The trampoline is a pink plate and the moving bridge an orange plate, both studded. The windmill is a white brick tower with clear-blue 1 × 2 windows and an arched doorway, turning grey plate sails on a round red hub. The flagpole is stacked grey bar segments, the tee a small white round plate, and the edge rails grey beams with holes. The ball stays glossy white, and aiming dots are white with a navy halo so they read against the sky.
+
+## Cat Maze
+
+The seventh puzzle adds a seventh plastic: **grape** (`#8A5CF0`), so it still has an identity of its own on sight. The maze is a friendly sitting cat, facing us: tangerine-orange fur with a darker edge, a cream tummy, pointed ears and a curling tail. The maze fills the cat with a border of fur round it. Its walls are dark brown, the eyes (big, white, with shines) and pink nose are solid features the corridors wind round, and the whiskers sit outside the face. The start is a pulsing cobalt ring at the mouth and the goal a gently beating red heart on the tummy. The child's line is thick cobalt with a light highlight down its middle, and turns green, with the heart popping, when it arrives. Hints are six sunflower dots along the route.
 
 ## Start screen
 

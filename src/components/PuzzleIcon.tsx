@@ -1,6 +1,6 @@
 "use client";
 
-import { Cards, Golf, LockKey, Path, PuzzlePiece, Train, type IconProps } from "@phosphor-icons/react";
+import { Cards, Cat, Golf, LockKey, Path, PuzzlePiece, Train, type IconProps } from "@phosphor-icons/react";
 import type { PuzzleType } from "@/lib/schema";
 
 const ICONS = {
@@ -10,6 +10,7 @@ const ICONS = {
   memoryMatch: Cards,
   flickGolf: Golf,
   countingLock: LockKey,
+  maze: Cat,
 } satisfies Record<PuzzleType, unknown>;
 
 export function PuzzleIcon({ type, ...props }: IconProps & { type: PuzzleType }) {

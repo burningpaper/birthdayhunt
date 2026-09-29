@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { LIFT_PX } from "../../src/puzzles/marble3d/constants";
 import { LEVELS, type Placed } from "../../src/puzzles/marble3d/levels";
+import { makeMaze, type Cell } from "../../src/puzzles/maze/logic";
 import { findSolution, turnsFor, type Kind } from "../../src/puzzles/track/logic";
 
 /**
@@ -176,10 +177,31 @@ export async function solveMarble(page: Page) {
   }
 }
 
+/** Where maze cells are on screen (cell units are the maze SVG's own coordinates). */
+export async function mazeCellsOnScreen(page: Page, cells: Cell[]) {
+  return page.evaluate((cs) => {
+    const svg = document.querySelector<SVGSVGElement>("svg.maze")!;
+    const m = svg.getScreenCTM()!;
+    return cs.map(({ c, r }) => new DOMPoint(c + 0.5, r + 0.5).matrixTransform(m)).map((p) => ({ x: p.x, y: p.y }));
+  }, cells);
+}
+
+/** Draw the one route from the cat's mouth to its tummy, as a finger would. */
+export async function solveMaze(page: Page) {
+  const svg = page.locator("svg.maze");
+  await expect(svg).toBeVisible();
+  const maze = makeMaze(Number(await svg.getAttribute("data-grid")), Number(await svg.getAttribute("data-seed")));
+  const points = await mazeCellsOnScreen(page, maze.solution);
+  await page.mouse.move(points[0].x, points[0].y);
+  await page.mouse.down();
+  for (const p of points.slice(1)) await page.mouse.move(p.x, p.y, { steps: 2 });
+  await page.mouse.up();
+}
+
 /** Solve whatever puzzle this station shows. Lock answers come from the test's own hunt setup. */
 export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
   // Puzzles fade in after "Tap to start": wait until one is actually on screen.
-  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, div.marble-run");
+  const anyPuzzle = page.locator("svg.jigsaw, button.memory-card, .dial-window, .track-tile, canvas.golf-course, div.marble-run, svg.maze");
   await expect(anyPuzzle.first()).toBeVisible();
   if (await page.locator("svg.jigsaw").isVisible()) return solveJigsaw(page);
   if (await page.locator("button.memory-card").first().isVisible()) return solveMemory(page);
@@ -187,5 +209,6 @@ export async function solveAny(page: Page, lockAnswers: number[] = [2, 2, 2]) {
   if (await page.locator(".track-tile").first().isVisible()) return solveTrack(page);
   if (await page.locator("canvas.golf-course").isVisible()) return solveGolf(page);
   if (await page.locator("div.marble-run").isVisible()) return solveMarble(page);
+  if (await page.locator("svg.maze").isVisible()) return solveMaze(page);
   throw new Error("No puzzle found on this station");
 }

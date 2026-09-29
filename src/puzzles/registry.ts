@@ -4,6 +4,7 @@ import { FlickGolf } from "./golf/FlickGolf";
 import { Jigsaw } from "./jigsaw/Jigsaw";
 import { CountingLock } from "./lock/CountingLock";
 import { MarbleRun3d } from "./marble3d/MarbleRun3d";
+import { Maze } from "./maze/Maze";
 import { MemoryMatch } from "./memory/MemoryMatch";
 import { TrainTrack } from "./track/TrainTrack";
 import type { PuzzleProps } from "./types";
@@ -16,4 +17,5 @@ export const PUZZLES: Record<PuzzleType, ComponentType<PuzzleProps>> = {
   memoryMatch: MemoryMatch,
   flickGolf: FlickGolf,
   countingLock: CountingLock,
+  maze: Maze,
 };

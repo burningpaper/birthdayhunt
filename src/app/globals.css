@@ -14,6 +14,7 @@
   --color-sunflower: #ffc21a;
   --color-tangerine: #ff8a1f;
   --color-bubblegum: #f0508f;
+  --color-grape: #8a5cf0;
 
   --font-display: var(--font-lilita), "Arial Rounded MT Bold", system-ui, sans-serif;
   --font-sans: var(--font-outfit), system-ui, -apple-system, sans-serif;
@@ -131,6 +132,7 @@ body {
 .plastic-cobalt { --plastic: var(--color-cobalt); }
 .plastic-grass { --plastic: var(--color-grass); }
 .plastic-bubblegum { --plastic: var(--color-bubblegum); }
+.plastic-grape { --plastic: var(--color-grape); }
 .plastic-sunflower { --plastic: var(--color-sunflower); --plastic-ink: var(--color-ink); text-shadow: 0 1px 0 rgb(255 255 255 / 0.45); }
 .plastic-tangerine { --plastic: var(--color-tangerine); --plastic-ink: var(--color-ink); text-shadow: 0 1px 0 rgb(255 255 255 / 0.45); }
 .plastic-cream { --plastic: var(--color-cream); --plastic-ink: var(--color-ink); text-shadow: none; }
